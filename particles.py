@@ -57,6 +57,7 @@ class ParticleSystem:
         self.particles = [Particle() for _ in range(max_particles)]
         self.pool_index = 0
         self.run_particle_timer = 0  # Throttle running particles
+        self._surface_cache = {}  # Cache for pre-rendered particle surfaces
 
     def _get_next_particle(self):
         """Get next available particle from pool (ring buffer)."""
@@ -236,7 +237,7 @@ class ParticleSystem:
                 particle.update()
 
     def draw(self, surface):
-        """Render all active particles with alpha fade."""
+        """Render all active particles with alpha fade (optimized with caching)."""
         for particle in self.particles:
             if not particle.active:
                 continue
@@ -248,22 +249,34 @@ class ParticleSystem:
             else:
                 alpha = 255
 
-            # Create surface for alpha blending
-            particle_surface = pygame.Surface((int(particle.size * 2), int(particle.size * 2)), pygame.SRCALPHA)
+            # Round size to int for cache key
+            size = int(particle.size)
+            if size < 1:
+                size = 1
 
-            # Draw particle with alpha
-            color_with_alpha = (*particle.color, alpha)
-            pygame.draw.circle(
-                particle_surface,
-                color_with_alpha,
-                (int(particle.size), int(particle.size)),
-                int(particle.size)
-            )
+            # Cache key: (size, color, alpha_bucket)
+            # Bucket alpha to reduce cache entries (0, 64, 128, 192, 255)
+            alpha_bucket = (alpha // 64) * 64
+            if alpha_bucket > 255:
+                alpha_bucket = 255
+            cache_key = (size, particle.color, alpha_bucket)
 
-            # Blit to main surface
+            # Get or create cached surface
+            if cache_key not in self._surface_cache:
+                particle_surface = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
+                color_with_alpha = (*particle.color, alpha_bucket if alpha_bucket > 0 else 1)
+                pygame.draw.circle(
+                    particle_surface,
+                    color_with_alpha,
+                    (size, size),
+                    size
+                )
+                self._surface_cache[cache_key] = particle_surface
+
+            # Blit cached surface
             surface.blit(
-                particle_surface,
-                (int(particle.x - particle.size), int(particle.y - particle.size))
+                self._surface_cache[cache_key],
+                (int(particle.x - size), int(particle.y - size))
             )
     def spawn_sword_arc(self, x, y, facing_right):
         """Link's Sword Arc"""
