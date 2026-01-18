@@ -40,5 +40,8 @@ Reference for PlayStation DualSense controller on macOS.
 - **L2 (Axis 4)**: Hold + D-Pad = Select Character
 - **R2 (Axis 5)**: Hold + D-Pad = Select Level
 - **L1 (Button 9)**: Reset Physics to Defaults
+- **R1 (Button 10)**: Hold + D-Pad = Adjust Physics
+  - D-Pad Up/Down: Navigate sliders
+  - D-Pad Left/Right: Adjust value
 - **D-Pad**: Navigation (when in selection mode)
 - **Cross (Button 0)**: Jump

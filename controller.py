@@ -24,10 +24,11 @@ class ControllerInput:
         else:
             print("No controller detected. Using keyboard only.")
     
-    def get_movement_input(self):
+    def get_movement_input(self, ignore_dpad=False):
         """
         Returns (horizontal, jump, run, dash) as booleans/values
         horizontal: -1 (left), 0 (neutral), 1 (right)
+        ignore_dpad: If True, don't read D-pad for movement (for RB physics mode)
         """
         if not self.connected:
             return 0, False, False, False
@@ -45,8 +46,8 @@ class ControllerInput:
         else:
             horizontal = 1 if horizontal > 0 else -1
             
-        # D-Pad Support (Buttons 11-14 or Hat)
-        if horizontal == 0:  # Only check dpad if stick is neutral
+        # D-Pad Support (Buttons 11-14 or Hat) - ONLY if not ignored
+        if horizontal == 0 and not ignore_dpad:
             # Method 1: D-pad as buttons (Common on macOS)
             # Typically: 11=Up, 12=Down, 13=Left, 14=Right (check your logs for exact mapping)
             # Based on logs: 11, 13, 14 being pressed

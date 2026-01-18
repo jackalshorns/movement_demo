@@ -152,17 +152,20 @@ def main():
         
         # D-Pad navigation for physics (only when RB held, digital input with debounce)
         if rb_pressed:
-            # Up/Down to navigate sliders
+            # Up/Down to navigate sliders (inverted: up=-1 should go up in list)
             if dpad_y != 0 and not dpad_was_pressed_y:
-                ui.navigate_slider(dpad_y)  # -1 = up, +1 = down
+                ui.navigate_slider(-dpad_y)  # Invert: -1 (up) -> go up in list
             # Left/Right to adjust value
             if dpad_x != 0 and not dpad_was_pressed_x:
                 ui.adjust_selected(dpad_x)  # -1 = decrease, +1 = increase
+            # Consume D-pad input so character doesn't move
+            dpad_x = 0
+            dpad_y = 0
         
         # Track D-pad state for debouncing (only in RB mode)
         if rb_pressed:
-            dpad_was_pressed_x = dpad_x != 0
-            dpad_was_pressed_y = dpad_y != 0
+            dpad_was_pressed_x = controller.get_dpad_input()[0] != 0
+            dpad_was_pressed_y = controller.get_dpad_input()[1] != 0
         else:
             dpad_was_pressed_x = False
             dpad_was_pressed_y = False
@@ -226,7 +229,7 @@ def main():
         # Game Logic (Only update if not selecting, or maybe pause?)
         # Usually nice to pause or slow mo. Let's pause updates to prevent moving while selecting.
         if selection_mode is None:
-            player.update(controller)
+            player.update(controller, ignore_dpad=rb_pressed)
             particle_system.update()
 
             # Check finish

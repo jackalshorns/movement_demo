@@ -59,7 +59,7 @@ class Player(pygame.sprite.Sprite):
         except ValueError:
             self.switch_profile(MARIO) # Fallback
 
-    def get_input(self, controller=None):
+    def get_input(self, controller=None, ignore_dpad=False):
         keys = pygame.key.get_pressed()
         
         # Get controller input if available
@@ -69,7 +69,7 @@ class Player(pygame.sprite.Sprite):
         controller_dash = False
         
         if controller and controller.connected:
-            controller_horizontal, controller_jump, controller_run, controller_dash = controller.get_movement_input()
+            controller_horizontal, controller_jump, controller_run, controller_dash = controller.get_movement_input(ignore_dpad=ignore_dpad)
         
         # Dash input (Zelda/Link only) - keyboard OR controller
         if self.profile.has_dash and not self.dash_active:
@@ -456,8 +456,8 @@ class Player(pygame.sprite.Sprite):
                     self.rect.centerx, self.rect.centery, 1 if self.facing_right else -1
                 )
 
-    def update(self, controller=None):
-        self.get_input(controller)
+    def update(self, controller=None, ignore_dpad=False):
+        self.get_input(controller, ignore_dpad=ignore_dpad)
         
         # Check Signature Input
         if controller and controller.connected:
