@@ -1,6 +1,7 @@
 import pygame
 from settings import SCREEN_HEIGHT, SCREEN_WIDTH
 from character_profiles import MARIO, SUPER_MEAT_BOY, ZELDA_LINK, MADELINE, N_NINJA
+from character_faces import get_face_data
 
 class Slider:
     def __init__(self, x, y, width, height, min_val, max_val, initial_val, label, param_name):
@@ -201,89 +202,7 @@ class ControlPanel:
     def draw_character_face(self, surface, x, y, profile):
         """Draws a simple 8x8 pixel art face scaled up"""
         scale = 4
-        
-        # Base colors
-        skin = (255, 200, 150)
-        eye = (0, 0, 0)
-        
-        # Default simple face (Smiley)
-        pixels = [
-            "........",
-            ".XXXXXX.",
-            ".X....X.",
-            ".X.O.O.X.",
-            ".X....X.",
-            ".X.XX.X.",
-            ".XXXXXX.",
-            "........"
-        ]
-        color_map = {'.': None, 'X': profile.color, 'O': eye, 'S': skin, 'R': (200, 50, 50), 'G': (50, 200, 50)}
-        
-        name = profile.name
-        if name == "Mario":
-            pixels = [
-                "..RRR...",
-                ".RRRRR..",
-                "..SSSS..",
-                "..SOSS..",
-                "...SS...",
-                "..RRRR..",
-                ".R.RR.R.",
-                ".B.B..B." # B not mapped, will be blue
-            ]
-            color_map['B'] = (50, 50, 200)
-            
-        elif name == "Super Meat Boy":
-            pixels = [
-                "........",
-                ".RRRRRR.",
-                ".R....R.",
-                ".R.O.O.R.",
-                ".R....R.",
-                ".R.RR.R.",
-                ".RRRRRR.",
-                "........"
-            ]
-            color_map['R'] = (180, 50, 50)
-            
-        elif name == "Link":
-            pixels = [
-                "..GGG...",
-                ".GGGGG..",
-                "..SSSS..",
-                "..SOSS..",
-                "...SS...",
-                "..GGGG..",
-                ".G.GG.G.",
-                "........"
-            ]
-            
-        elif name == "Madeline":
-            pixels = [
-                "..RRR...",
-                ".RRRRR..",
-                ".RSSSS..",
-                ".RSOSS..",
-                ".RSSSS..",
-                "..BBBB..",
-                "........",
-                "........"
-            ]
-            color_map['R'] = (255, 100, 80) # Hair
-            color_map['B'] = (50, 50, 150) # Shirt
-            
-        elif "Ninja" in name:
-             pixels = [
-                "........",
-                ".KKKKK..",
-                ".KSSSSK.",
-                ".KSOSSK.",
-                ".KKKKK..",
-                "..KKK...",
-                ".K.K.K..",
-                "........"
-            ]
-             color_map['K'] = (50, 50, 50)
+        pixels, color_map = get_face_data(profile.name, profile.color)
         
         # Draw
         for row in range(8):
