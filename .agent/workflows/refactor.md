@@ -18,25 +18,32 @@ Use this workflow when a file exceeds 300 lines and needs to be split.
 
 5. **Verify**: Run the game to ensure nothing broke
 
-## Current Refactoring Candidates
+## Completed Refactors
 
-### player.py (760+ lines)
+### player.py → player_renderer.py ✅
 
-Could be split into:
+- Extracted 236 lines of rendering code
+- Reduced player.py from 760 to 527 lines
 
-- `player_physics.py` - Movement, gravity, collision logic
-- `player_renderer.py` - `update_visuals()` procedural sprites
-- `player_input.py` - Input processing abstraction
+## Remaining Candidates
 
-### playgrounds.py (378 lines)
+### playgrounds.py (369 lines)
 
 Could be split into:
 
 - `level_data.py` - Level definitions as data structures
 - `platform.py` - Platform and Hazard sprite classes
 
+### ui.py (408 lines)
+
+Could be split into:
+
+- `ui_controls.py` - Control panel and sliders
+- `ui_faces.py` - Character face rendering
+
 ## Rules for Extraction
 
-* Keep the class interface stable - don't change public method signatures
+- Keep the class interface stable - don't change public method signatures
+
 - Move private helper methods with the code that uses them
 - Preserve existing import patterns in other files

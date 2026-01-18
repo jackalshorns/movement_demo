@@ -55,7 +55,23 @@ char_list = [MARIO, SUPER_MEAT_BOY, ZELDA_LINK, MADELINE, N_NINJA, NEW_CHARACTER
 
 ## 4. Add Visual Representation
 
-In `player.py` `update_visuals()` method, add a new `elif` block for the character's procedural sprite.
+In `player_renderer.py`, add a new draw function:
+
+```python
+def draw_new_character(surface, center_x, color, velocity_x, on_ground, anim_offset):
+    """Draw New Character sprite."""
+    # Add your drawing code here
+    # See existing draw_mario(), draw_link() etc. for examples
+    return anim_offset
+```
+
+Then add to the `render_character()` dispatcher:
+
+```python
+elif name == "New Character":
+    return draw_new_character(player.image, center_x, color,
+                              player.velocity.x, player.on_ground, player.anim_offset)
+```
 
 ## 5. Add to UI
 
