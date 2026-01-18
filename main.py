@@ -71,6 +71,9 @@ def main():
     selection_mode = None # None, "CHARACTER", "LEVEL"
     selection_index = 0
     selection_cooldown = 0
+    lb_was_pressed = False  # Track LB state for debouncing
+    dpad_was_pressed_x = False  # Track D-pad state for RB mode
+    dpad_was_pressed_y = False
 
     running = True
     while running:
@@ -123,11 +126,46 @@ def main():
         l2, r2 = controller.get_triggers()
         dpad_x, dpad_y = controller.get_dpad_input()
         
-        # Check LB for Physics Reset
-        if controller.connected and controller.joystick.get_numbuttons() > 4:
-            if controller.joystick.get_button(4): # LB
-                 player.profile.reset_physics()
-                 ui.create_sliders()
+        # Check LB for Physics Reset (only trigger once per press)
+        # DualSense: L1=9, R1=10, Start=6
+        lb_pressed = False
+        rb_pressed = False
+        if controller.connected and controller.joystick:
+            num_buttons = controller.joystick.get_numbuttons()
+            # DualSense uses button 9 for L1, Xbox uses button 4 for LB
+            if num_buttons > 9:
+                lb_pressed = controller.joystick.get_button(9)  # DualSense L1
+                rb_pressed = controller.joystick.get_button(10) # DualSense R1
+            elif num_buttons > 5:
+                lb_pressed = controller.joystick.get_button(4)  # Xbox LB
+                rb_pressed = controller.joystick.get_button(5)  # Xbox RB
+        
+        # LB: Reset physics
+        if lb_pressed and not lb_was_pressed:
+            player.profile.reset_physics()
+            ui.create_sliders()
+            print(f"Physics reset to defaults for {player.profile.name}")
+        lb_was_pressed = lb_pressed
+        
+        # RB: Physics adjustment mode
+        ui.set_physics_mode(rb_pressed)
+        
+        # D-Pad navigation for physics (only when RB held, digital input with debounce)
+        if rb_pressed:
+            # Up/Down to navigate sliders
+            if dpad_y != 0 and not dpad_was_pressed_y:
+                ui.navigate_slider(dpad_y)  # -1 = up, +1 = down
+            # Left/Right to adjust value
+            if dpad_x != 0 and not dpad_was_pressed_x:
+                ui.adjust_selected(dpad_x)  # -1 = decrease, +1 = increase
+        
+        # Track D-pad state for debouncing (only in RB mode)
+        if rb_pressed:
+            dpad_was_pressed_x = dpad_x != 0
+            dpad_was_pressed_y = dpad_y != 0
+        else:
+            dpad_was_pressed_x = False
+            dpad_was_pressed_y = False
         
         
         # Main Selection State Machine

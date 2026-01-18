@@ -11,12 +11,13 @@ class Slider:
         self.param_name = param_name
         self.label = label
         self.dragging = False
+        self.default_val = initial_val  # Store default for tick mark
         
         self.handle_width = 8
         self.handle_rect = pygame.Rect(x, y - 2, self.handle_width, height + 4)
         self.update_handle_pos(initial_val)
         
-        self.font = pygame.font.SysFont(None, 16)
+        self.font = pygame.font.SysFont(None, 20)  # Larger font
 
     def update_handle_pos(self, val):
         val = max(self.min_val, min(val, self.max_val))
@@ -25,11 +26,26 @@ class Slider:
         px_x = self.rect.x + (pct * self.rect.width) - (self.handle_width / 2)
         self.handle_rect.x = px_x
 
+    def get_default_x(self):
+        """Get pixel X position for default value tick mark."""
+        range_val = self.max_val - self.min_val
+        pct = (self.default_val - self.min_val) / range_val
+        return self.rect.x + (pct * self.rect.width)
+
     def get_value_from_pos(self, mouse_x):
         mouse_x = max(self.rect.left, min(mouse_x, self.rect.right))
         pct = (mouse_x - self.rect.left) / self.rect.width
         val = self.min_val + (pct * (self.max_val - self.min_val))
         return val
+    
+    def adjust_by_step(self, direction, profile):
+        """Adjust value by a step. direction: -1 or +1"""
+        current = getattr(profile, self.param_name)
+        step = (self.max_val - self.min_val) / 20  # 5% steps
+        new_val = current + (direction * step)
+        new_val = max(self.min_val, min(new_val, self.max_val))
+        setattr(profile, self.param_name, new_val)
+        self.update_handle_pos(new_val)
 
     def handle_event(self, event, profile):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -49,20 +65,40 @@ class Slider:
         self.update_handle_pos(val)
         setattr(profile, self.param_name, val)
 
-    def draw(self, surface, profile):
+    def draw(self, surface, profile, highlighted=False):
         current_val = getattr(profile, self.param_name)
-        label_surf = self.font.render(f"{self.label}: {current_val:.1f}", True, (180, 180, 180))
-        surface.blit(label_surf, (self.rect.x, self.rect.y - 14))
         
-        pygame.draw.rect(surface, (60, 60, 60), self.rect)
-        color = (160, 160, 160) if not self.dragging else (255, 220, 0)
-        pygame.draw.rect(surface, color, self.handle_rect)
+        # Label with larger font
+        label_color = (255, 255, 100) if highlighted else (180, 180, 180)
+        label_surf = self.font.render(f"{self.label}: {current_val:.2f}", True, label_color)
+        surface.blit(label_surf, (self.rect.x, self.rect.y - 16))
+        
+        # Track background
+        track_color = (100, 100, 60) if highlighted else (60, 60, 60)
+        pygame.draw.rect(surface, track_color, self.rect)
+        
+        # Default tick mark (white line)
+        default_x = self.get_default_x()
+        pygame.draw.line(surface, (255, 255, 255), 
+                        (default_x, self.rect.y - 3), 
+                        (default_x, self.rect.y + self.rect.height + 3), 2)
+        
+        # Handle
+        if highlighted:
+            handle_color = (255, 220, 0)
+        elif self.dragging:
+            handle_color = (255, 220, 0)
+        else:
+            handle_color = (160, 160, 160)
+        pygame.draw.rect(surface, handle_color, self.handle_rect)
 
 class ControlPanel:
     def __init__(self, player):
         self.player = player
         self.sliders = []
         self.rebind_mode = False
+        self.selected_slider = 0  # Currently selected slider index
+        self.physics_adjust_mode = False  # True when RB is held
         self.create_sliders()
         
     def create_sliders(self):
@@ -70,17 +106,31 @@ class ControlPanel:
         self.sliders = []
         profile = self.player.profile
         
-        # Top right position
+        # Top right position - more spacing for larger font
         x_start = SCREEN_WIDTH - 180
-        y_start = 50
-        spacing = 28
+        y_start = 55
+        spacing = 32  # Increased spacing
         
         # Core physics sliders (compact)
-        self.sliders.append(Slider(x_start, y_start + 0*spacing, 150, 5, 0.1, 2.0, profile.gravity, "Gravity", "gravity"))
-        self.sliders.append(Slider(x_start, y_start + 1*spacing, 150, 5, 0.1, 2.5, profile.falling_gravity, "Fall Grav", "falling_gravity"))
-        self.sliders.append(Slider(x_start, y_start + 2*spacing, 150, 5, 1.0, 12.0, profile.walk_speed, "Speed", "walk_speed"))
-        self.sliders.append(Slider(x_start, y_start + 3*spacing, 150, 5, 0.05, 2.5, profile.acceleration, "Accel", "acceleration"))
-        self.sliders.append(Slider(x_start, y_start + 4*spacing, 150, 5, 5.0, 20.0, profile.jump_force, "Jump", "jump_force"))
+        self.sliders.append(Slider(x_start, y_start + 0*spacing, 150, 6, 0.1, 2.0, profile.gravity, "Gravity", "gravity"))
+        self.sliders.append(Slider(x_start, y_start + 1*spacing, 150, 6, 0.1, 2.5, profile.falling_gravity, "Fall Grav", "falling_gravity"))
+        self.sliders.append(Slider(x_start, y_start + 2*spacing, 150, 6, 1.0, 12.0, profile.walk_speed, "Speed", "walk_speed"))
+        self.sliders.append(Slider(x_start, y_start + 3*spacing, 150, 6, 0.05, 2.5, profile.acceleration, "Accel", "acceleration"))
+        self.sliders.append(Slider(x_start, y_start + 4*spacing, 150, 6, 5.0, 20.0, profile.jump_force, "Jump", "jump_force"))
+    
+    def set_physics_mode(self, active):
+        """Enable/disable physics adjustment mode."""
+        self.physics_adjust_mode = active
+    
+    def navigate_slider(self, direction):
+        """Move selection up (-1) or down (+1)."""
+        if self.sliders:
+            self.selected_slider = (self.selected_slider + direction) % len(self.sliders)
+    
+    def adjust_selected(self, direction):
+        """Adjust selected slider value. direction: -1 (left) or +1 (right)."""
+        if self.sliders:
+            self.sliders[self.selected_slider].adjust_by_step(direction, self.player.profile)
 
     def handle_event(self, event):
         for slider in self.sliders:
@@ -216,28 +266,32 @@ class ControlPanel:
     def draw_right_panel(self, surface, keybindings):
         """Draw physics sliders and controls on right side"""
         font_header = pygame.font.SysFont(None, 22, bold=True)
-        font_text = pygame.font.SysFont(None, 16)
+        font_text = pygame.font.SysFont(None, 18)
         
         x = SCREEN_WIDTH - 195
         y = 15
         
         # === PHYSICS HEADER ===
-        header = font_header.render("PHYSICS", True, (100, 180, 255))
+        header_color = (255, 200, 100) if self.physics_adjust_mode else (100, 180, 255)
+        header_text = "PHYSICS (RB)" if self.physics_adjust_mode else "PHYSICS"
+        header = font_header.render(header_text, True, header_color)
         surface.blit(header, (x, y))
-        y += 20
+        y += 25
         
-        # Draw sliders
-        for slider in self.sliders:
-            slider.draw(surface, self.player.profile)
+        # Draw sliders with highlight for selected one
+        for i, slider in enumerate(self.sliders):
+            is_highlighted = self.physics_adjust_mode and i == self.selected_slider
+            slider.draw(surface, self.player.profile, highlighted=is_highlighted)
         
-        y = 195
+        y = 225  # Adjusted for new spacing
         
-        # Reset Hint (aligned to slider left edge)
-        slider_x = SCREEN_WIDTH - 180  # Match slider x position
-        reset_label = font_text.render("Reset to Default:", True, (150, 150, 150))
+        # Reset/Adjust Hints
+        slider_x = SCREEN_WIDTH - 180
+        reset_label = font_text.render("Reset All: LB", True, (150, 150, 150))
         surface.blit(reset_label, (slider_x, y))
-        reset_key = font_text.render("LB", True, (200, 200, 200))
-        surface.blit(reset_key, (slider_x + 110, y))
+        y += 18
+        adjust_label = font_text.render("Adjust: Hold RB + D-Pad", True, (150, 150, 150))
+        surface.blit(adjust_label, (slider_x, y))
 
 
     def draw(self, surface, keybindings):
