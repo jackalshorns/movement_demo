@@ -6,7 +6,7 @@ class ControllerInput:
     def __init__(self):
         self.joystick = None
         self.connected = False
-        self.debug_mode = True  # Enable debugging
+        self.debug_mode = False  # Disable by default (use toggle_debug() to enable)
         self.init_controller()
     
     def init_controller(self):

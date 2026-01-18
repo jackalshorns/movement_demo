@@ -362,14 +362,6 @@ class PlaygroundManager:
             return True
         return False
     
-    def next_playground(self):
-        """Switch to next playground"""
-        self.load_playground((self.current_playground + 1) % 6)
-    
-    def previous_playground(self):
-        """Switch to previous playground"""
-        self.load_playground((self.current_playground - 1) % 6)
-    
     
     def draw(self, surface):
         self.platforms.draw(surface)

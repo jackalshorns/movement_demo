@@ -104,11 +104,7 @@ class ControlPanel:
         
         # Name
         name_surf = font_header.render(profile.name, True, profile.color)
-        # Name
-        # Name
-        name_surf = font_header.render(profile.name, True, profile.color)
         surface.blit(name_surf, (x + 40, y + 8))
-
         
         y += 45
         
