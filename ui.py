@@ -71,7 +71,7 @@ class ControlPanel:
         
         # Top right position
         x_start = SCREEN_WIDTH - 180
-        y_start = 20
+        y_start = 50
         spacing = 28
         
         # Core physics sliders (compact)
@@ -96,35 +96,21 @@ class ControlPanel:
         x = 15
         y = 15
         
-        # === CHARACTER SELECTION ===
-        header = font_header.render("CHARACTER", True, (255, 220, 100))
-        surface.blit(header, (x, y))
-        y += 25
+        # === CHARACTER ===
+        # No header, just name and face
         
-        # Current character name in their color
+        # Face
+        self.draw_character_face(surface, x, y, profile)
+        
+        # Name
         name_surf = font_header.render(profile.name, True, profile.color)
-        surface.blit(name_surf, (x, y))
-        y += 25
+        # Name
+        # Name
+        name_surf = font_header.render(profile.name, True, profile.color)
+        surface.blit(name_surf, (x + 40, y + 8))
+
         
-        # Hotkey hint
-        for i, (name, prof, action) in enumerate([
-            ("Mario", MARIO, "char_1"),
-            ("Meat Boy", SUPER_MEAT_BOY, "char_2"),
-            ("Link", ZELDA_LINK, "char_3"),
-            ("Madeline", MADELINE, "char_4"),
-            ("Ninja", N_NINJA, "char_5"),
-        ]):
-            key = keybindings.get_binding_display(action)
-            if prof == profile:
-                color = prof.color
-                txt = font_text.render(f"[{key}] {name} ◀", True, color)
-            else:
-                color = (100, 100, 100)
-                txt = font_small.render(f"[{key}] {name}", True, color)
-            surface.blit(txt, (x, y))
-            y += 20
-        
-        y += 10
+        y += 45
         
         # === ABILITIES ===
         header = font_header.render("ABILITIES", True, (100, 255, 150))
@@ -148,7 +134,7 @@ class ControlPanel:
             surface.blit(txt, (x, y))
             y += 18
         
-        y += 10
+        y += 8
         
         # === DESCRIPTION ===
         desc_lines = []
@@ -163,14 +149,158 @@ class ControlPanel:
         if line:
             desc_lines.append(line)
         
-        for line in desc_lines[:3]:
-            txt = font_small.render(line.strip(), True, (150, 150, 150))
+        font_desc = pygame.font.SysFont(None, 17, italic=True)
+        for line in desc_lines:
+            txt = font_desc.render(line.strip(), True, (180, 180, 180))
             surface.blit(txt, (x, y))
-            y += 16
+            y += 14
+            
+        y += 15
+        
+        # === CONTROLS ===
+        header = font_header.render("CONTROLS", True, (255, 180, 100))
+        surface.blit(header, (x, y))
+        y += 20
+        
+        controls = [
+            ("Move", "Arrows / Stick"),
+            ("Jump", "Space / Btn A"),
+            ("Run", "Shift / R1"),
+            ("Dash", "X,C / Btn Y"),
+            ("Reset Game", "R / Select"),
+            ("Back to Default", "LB (Bumper)"),
+            ("Randomize", "Share / 7"),
+        ]
+        
+        for label, keys in controls:
+            txt = font_text.render(f"{label}:", True, (150, 150, 150))
+            surface.blit(txt, (x, y))
+            key_txt = font_text.render(keys, True, (200, 200, 200))
+            surface.blit(key_txt, (x + 70, y))
+            y += 18
+        
+        y += 15
+        
+        # === SWITCHER ===
+        header = font_header.render("SWITCHER", True, (200, 100, 255))
+        surface.blit(header, (x, y))
+        y += 20
+        
+        start_x_offset = 80 # Increased offset to accommodate "Char Select"
+        
+        switchers = [
+            ("Char Select", "Hold LT"),
+            ("Lvl Select", "Hold RT"),
+        ]
+        
+        for label, keys in switchers:
+            txt = font_text.render(f"{label}:", True, (150, 150, 150))
+            surface.blit(txt, (x, y))
+            key_txt = font_text.render(keys, True, (200, 200, 200))
+            surface.blit(key_txt, (x + start_x_offset, y))
+            y += 18
+
+
+
+    def draw_character_face(self, surface, x, y, profile):
+        """Draws a simple 8x8 pixel art face scaled up"""
+        scale = 4
+        
+        # Base colors
+        skin = (255, 200, 150)
+        eye = (0, 0, 0)
+        
+        # Default simple face (Smiley)
+        pixels = [
+            "........",
+            ".XXXXXX.",
+            ".X....X.",
+            ".X.O.O.X.",
+            ".X....X.",
+            ".X.XX.X.",
+            ".XXXXXX.",
+            "........"
+        ]
+        color_map = {'.': None, 'X': profile.color, 'O': eye, 'S': skin, 'R': (200, 50, 50), 'G': (50, 200, 50)}
+        
+        name = profile.name
+        if name == "Mario":
+            pixels = [
+                "..RRR...",
+                ".RRRRR..",
+                "..SSSS..",
+                "..SOSS..",
+                "...SS...",
+                "..RRRR..",
+                ".R.RR.R.",
+                ".B.B..B." # B not mapped, will be blue
+            ]
+            color_map['B'] = (50, 50, 200)
+            
+        elif name == "Super Meat Boy":
+            pixels = [
+                "........",
+                ".RRRRRR.",
+                ".R....R.",
+                ".R.O.O.R.",
+                ".R....R.",
+                ".R.RR.R.",
+                ".RRRRRR.",
+                "........"
+            ]
+            color_map['R'] = (180, 50, 50)
+            
+        elif name == "Link":
+            pixels = [
+                "..GGG...",
+                ".GGGGG..",
+                "..SSSS..",
+                "..SOSS..",
+                "...SS...",
+                "..GGGG..",
+                ".G.GG.G.",
+                "........"
+            ]
+            
+        elif name == "Madeline":
+            pixels = [
+                "..RRR...",
+                ".RRRRR..",
+                ".RSSSS..",
+                ".RSOSS..",
+                ".RSSSS..",
+                "..BBBB..",
+                "........",
+                "........"
+            ]
+            color_map['R'] = (255, 100, 80) # Hair
+            color_map['B'] = (50, 50, 150) # Shirt
+            
+        elif "Ninja" in name:
+             pixels = [
+                "........",
+                ".KKKKK..",
+                ".KSSSSK.",
+                ".KSOSSK.",
+                ".KKKKK..",
+                "..KKK...",
+                ".K.K.K..",
+                "........"
+            ]
+             color_map['K'] = (50, 50, 50)
+        
+        # Draw
+        for row in range(8):
+            for col in range(8):
+                if row < len(pixels) and col < len(pixels[row]):
+                    char = pixels[row][col]
+                    color = color_map.get(char, profile.color)
+                    if color:
+                        pygame.draw.rect(surface, color, (x + col*scale, y + row*scale, scale, scale))
 
     def draw_right_panel(self, surface, keybindings):
         """Draw physics sliders and controls on right side"""
-        font_header = pygame.font.SysFont(None, 20, bold=True)
+        font_header = pygame.font.SysFont(None, 22, bold=True)
         font_text = pygame.font.SysFont(None, 16)
         
         x = SCREEN_WIDTH - 195
@@ -185,35 +315,15 @@ class ControlPanel:
         for slider in self.sliders:
             slider.draw(surface, self.player.profile)
         
-        y = 165
+        y = 195
         
-        # === CONTROLS ===
-        header = font_header.render("CONTROLS", True, (255, 180, 100))
-        surface.blit(header, (x, y))
-        y += 20
-        
-        controls = [
-            ("Move", "Arrows / Stick"),
-            ("Jump", "Space / Btn 0"),
-            ("Run", "Shift / R1"),
-            ("Dash", "X,C / Btn 2"),
-            ("Reset", "R / Select"),
-            ("Cycle Char", "LB (Bumper)"),
-            ("Cycle Lvl", "RB (Bumper)"),
-        ]
-        
-        for label, keys in controls:
-            txt = font_text.render(f"{label}:", True, (150, 150, 150))
-            surface.blit(txt, (x, y))
-            key_txt = font_text.render(keys, True, (200, 200, 200))
-            surface.blit(key_txt, (x + 70, y)) # Increased x offset for longer text
-            y += 18
-        
-        y += 10
-        
-        # Rebind button hint
-        rebind_txt = font_text.render("[K] Key Rebind", True, (180, 180, 100))
-        surface.blit(rebind_txt, (x, y))
+        # Reset Hint (aligned to slider left edge)
+        slider_x = SCREEN_WIDTH - 180  # Match slider x position
+        reset_label = font_text.render("Reset to Default:", True, (150, 150, 150))
+        surface.blit(reset_label, (slider_x, y))
+        reset_key = font_text.render("LB", True, (200, 200, 200))
+        surface.blit(reset_key, (slider_x + 110, y))
+
 
     def draw(self, surface, keybindings):
         self.draw_left_panel(surface, keybindings)
@@ -253,12 +363,6 @@ def draw_level_selector(surface, playground, keybindings):
         txt = font.render(f"[{key}] {name}", True, color)
         surface.blit(txt, (x_offset, y))
         x_offset += 70
-    
-    # Randomize hint
-    if playground.current_playground in [2, 3, 4, 5]: # SMB, Celeste, N++, Shaft
-        hint = font.render("[7/Share] Randomize Layout", True, (180, 180, 100))
-        center_text = hint.get_rect(center=(center_x, y + 22))
-        surface.blit(hint, center_text)
 
 def draw_selection_overlay(surface, mode_type, current_index, items):
     """

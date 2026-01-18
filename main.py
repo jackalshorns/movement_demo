@@ -123,6 +123,13 @@ def main():
         l2, r2 = controller.get_triggers()
         dpad_x, dpad_y = controller.get_dpad_input()
         
+        # Check LB for Physics Reset
+        if controller.connected and controller.joystick.get_numbuttons() > 4:
+            if controller.joystick.get_button(4): # LB
+                 player.profile.reset_physics()
+                 ui.create_sliders()
+        
+        
         # Main Selection State Machine
         
         # Detect Mode Start

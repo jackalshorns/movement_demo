@@ -222,7 +222,7 @@ class Player(pygame.sprite.Sprite):
             if hasattr(self, 'particle_system'):
                 wall_x = self.rect.left if self.wall_direction == -1 else self.rect.right
                 self.particle_system.spawn_wall_slide_particles(
-                    wall_x, self.rect.left if self.wall_direction == -1 else self.rect.right, self.rect.centery, self.wall_direction, self.profile.color
+                    wall_x, self.rect.centery, self.wall_direction, self.profile.color
                 )
             
             # Wall Slide Haptics

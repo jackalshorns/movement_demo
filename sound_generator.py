@@ -32,6 +32,9 @@ def generate_jump_sound(filename):
             volume *= (progress / 0.1)
         else:
             volume *= (1.0 - (progress - 0.1) / 0.9)
+        
+        # Boost overall volume
+        volume *= 0.8
             
         value = math.sin(2.0 * math.pi * freq * t) * volume
         data.append(int(value * 32767.0))
@@ -50,8 +53,8 @@ def generate_land_sound(filename):
         # White noise
         noise = (random.random() * 2.0 - 1.0)
         
-        # Envelope: Fast decay
-        volume = 0.6 * (1.0 - progress)**2
+        # Envelope: Fast decay but louder start
+        volume = 1.0 * (1.0 - progress)**2
         
         value = noise * volume
         data.append(int(value * 32767.0))
@@ -75,7 +78,7 @@ def generate_skid_sound(filename):
         value = last_val * 0.8 + noise * 0.2
         last_val = value
         
-        volume = 0.4
+        volume = 0.6
         
         data.append(int(value * 32767.0 * volume))
         
@@ -103,6 +106,54 @@ def generate_dash_sound(filename):
         value = (noise + tone) * volume
         data.append(int(value * 32767.0))
         
+    write_wav(filename, data, sample_rate)
+
+def generate_jump_variant(filename, pitch_factor=1.0, type="sine"):
+    sample_rate = 44100
+    duration = 0.2
+    n_samples = int(sample_rate * duration)
+    data = []
+    
+    for i in range(n_samples):
+        t = float(i) / sample_rate
+        progress = i / n_samples
+        
+        # Rising frequency
+        base_freq = 300 * pitch_factor
+        freq = base_freq + (base_freq * progress)
+        
+        volume = 0.5
+        if progress < 0.1: volume *= (progress / 0.1)
+        else: volume *= (1.0 - (progress - 0.1) / 0.9)
+        
+        # Boost overall volume
+        volume *= 1.2
+        
+        if type == "sine":
+            value = math.sin(2.0 * math.pi * freq * t) * volume
+        elif type == "square":
+            value = (1.0 if math.sin(2.0 * math.pi * freq * t) > 0 else -1.0) * volume * 0.5
+            
+        data.append(int(value * 32767.0))
+    write_wav(filename, data, sample_rate)
+
+def generate_dash_variant(filename, pitch_factor=1.0):
+    sample_rate = 44100
+    duration = 0.2
+    n_samples = int(sample_rate * duration)
+    data = []
+    
+    for i in range(n_samples):
+        t = float(i) / sample_rate
+        progress = i / n_samples
+        
+        noise = (random.random() * 2.0 - 1.0) * 0.5
+        freq = (800 * pitch_factor) - (600 * pitch_factor * progress)
+        tone = math.sin(2.0 * math.pi * freq * t) * 0.5
+        volume = 0.6 * (1.0 - progress)**0.5
+        
+        value = (noise + tone) * volume
+        data.append(int(value * 32767.0))
     write_wav(filename, data, sample_rate)
 
 def generate_wall_slide_sound(filename):
@@ -138,7 +189,10 @@ def generate_sword_sound(filename):
         freq = 1500 - (1000 * progress)
         tone = math.sin(2.0 * math.pi * freq * t) * 0.7
         volume = 1.0 * (1.0 - progress)**2
-        value = (noise + tone) * volume
+        # Boost
+        value = (noise + tone) * volume * 1.2
+        # Clip
+        value = max(-1.0, min(1.0, value))
         data.append(int(value * 32767.0))
     write_wav(filename, data, sample_rate)
 
@@ -152,7 +206,8 @@ def generate_shuriken_sound(filename):
         progress = i / n_samples
         noise = (random.random() * 2.0 - 1.0)
         volume = 0.8 * (1.0 - progress)**4
-        value = noise * volume
+        value = noise * volume * 1.5
+        value = max(-1.0, min(1.0, value))
         data.append(int(value * 32767.0))
     write_wav(filename, data, sample_rate)
 
@@ -170,7 +225,7 @@ def generate_coin_sound(filename):
     for i in range(n_samples):
         t = float(i) / sample_rate
         freq = freq1 if i < switch_point else freq2
-        value = math.sin(2.0 * math.pi * freq * t) * 0.5
+        value = math.sin(2.0 * math.pi * freq * t) * 0.8
         # Decay
         if i >= switch_point:
              progress = (i - switch_point) / (n_samples - switch_point)
@@ -193,6 +248,8 @@ def generate_laugh_sound(filename):
         
         value = math.sin(2.0 * math.pi * freq * t) * 0.5
         volume = 1.0 * (1.0 - (i/n_samples))
+        # Boost high freq
+        value = math.sin(2.0 * math.pi * freq * t) * 0.8
         data.append(int(value * volume * 32767.0))
     write_wav(filename, data, sample_rate)
 
@@ -209,7 +266,7 @@ def generate_squish_sound(filename):
         # Just simple low pass with resonance attempt
         value = last_val * 0.6 + noise * 0.4
         last_val = value
-        volume = 0.8 * (1.0 - i/n_samples)**2
+        volume = 1.0 * (1.0 - i/n_samples)**2
         data.append(int(value * volume * 32767.0))
     write_wav(filename, data, sample_rate)
 

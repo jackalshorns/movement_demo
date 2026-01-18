@@ -45,7 +45,7 @@ class SoundManager:
             if os.path.exists(path):
                 try:
                     self.sounds[name] = pygame.mixer.Sound(path)
-                    self.sounds[name].set_volume(0.4)
+                    self.sounds[name].set_volume(0.7)
                 except: pass
                 
         # Load all other generated files dynamically (like jump_Mario.wav)
@@ -55,7 +55,7 @@ class SoundManager:
                 path = os.path.join(sound_dir, filename)
                 try:
                     self.sounds[name] = pygame.mixer.Sound(path)
-                    self.sounds[name].set_volume(0.4)
+                    self.sounds[name].set_volume(0.7)
                 except: pass
     
     def play(self, sound_name):

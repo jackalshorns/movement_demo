@@ -46,6 +46,19 @@ class CharacterProfile:
     has_wall_jump: bool = False
     wall_jump_style: str = "celeste"
     wall_stick_time: int = 0
+    
+    def __post_init__(self):
+        self._defaults = {
+            "gravity": self.gravity,
+            "falling_gravity": self.falling_gravity,
+            "walk_speed": self.walk_speed,
+            "acceleration": self.acceleration,
+            "jump_force": self.jump_force
+        }
+
+    def reset_physics(self):
+        for key, value in self._defaults.items():
+            setattr(self, key, value)
 
 
 # Mario: Momentum-based, weighty, speed-dependent jumps

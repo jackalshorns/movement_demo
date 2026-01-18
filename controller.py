@@ -81,8 +81,8 @@ class ControllerInput:
         # Xbox: A=0, B=1, X=2, Y=3, LB=4, RB=5, LT=6, RT=7
         
         # Jump: Try buttons 0, 1, 2 (X, Circle, Square on PS5 / A, B, X on Xbox)
+        # Jump: Try buttons 0, 2 (X, Square on PS5 / A, X on Xbox) - Button 1 is Signature
         jump = (self.joystick.get_button(0) or 
-                self.joystick.get_button(1) or 
                 self.joystick.get_button(2))
         
         # Run: Try shoulder buttons (4, 5, 6, 7)
