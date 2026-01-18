@@ -3,6 +3,7 @@ import sys
 from settings import *
 from playgrounds import PlaygroundManager
 from player import Player
+from particles import ParticleSystem
 
 from ui import ControlPanel, draw_level_selector, draw_selection_overlay
 from keybindings import KeyBindings
@@ -16,12 +17,14 @@ def main():
 
     # Init Subsystems
     playground = PlaygroundManager()
-    
+    particle_system = ParticleSystem(max_particles=100)
+
     # Character List for Selection
     from character_profiles import CHARACTERS, MARIO, SUPER_MEAT_BOY, ZELDA_LINK, MADELINE, N_NINJA
     char_list = [MARIO, SUPER_MEAT_BOY, ZELDA_LINK, MADELINE, N_NINJA]
-    
+
     player = Player((200, SCREEN_HEIGHT - 200), playground, MARIO)
+    player.particle_system = particle_system
     
     # UI and Controls
     ui = ControlPanel(player)
@@ -145,7 +148,8 @@ def main():
         # Usually nice to pause or slow mo. Let's pause updates to prevent moving while selecting.
         if selection_mode is None:
             player.update(controller)
-            
+            particle_system.update()
+
             # Check finish
             if playground.check_finish(player.rect, player.profile.color):
                 player.rect.topleft = playground.start_pos
@@ -154,6 +158,7 @@ def main():
         # 3. Draw
         screen.fill((25, 25, 35))
         playground.draw(screen)
+        particle_system.draw(screen)
         screen.blit(player.image, player.rect)
         ui.draw(screen, keybindings)
         draw_level_selector(screen, playground, keybindings)

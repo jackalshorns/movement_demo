@@ -75,11 +75,22 @@ class Player(pygame.sprite.Sprite):
                 self.dash_active = True
                 self.dash_timer = self.profile.dash_duration
                 self.dash_direction = 1 if self.facing_right else -1
-        
+                # Spawn dash activation particles
+                if hasattr(self, 'particle_system'):
+                    self.particle_system.spawn_dash_particles(
+                        self.rect.centerx, self.rect.centery,
+                        self.dash_direction, self.profile.color
+                    )
+
         # If dashing, override normal movement
         if self.dash_active:
             self.velocity.x = self.dash_direction * self.profile.dash_speed
             self.dash_timer -= 1
+            # Spawn dash trail particles while dashing
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_dash_trail(
+                    self.rect.centerx, self.rect.centery, self.profile.color
+                )
             if self.dash_timer <= 0:
                 self.dash_active = False
             return  # Skip normal movement input while dashing
@@ -192,6 +203,12 @@ class Player(pygame.sprite.Sprite):
         # Wall slide reduces fall speed
         if self.on_wall and self.profile.has_wall_slide and self.velocity.y > 0:
             self.velocity.y = min(self.velocity.y, self.profile.wall_slide_speed)
+            # Spawn wall slide particles
+            if hasattr(self, 'particle_system'):
+                wall_x = self.rect.left if self.wall_direction == -1 else self.rect.right
+                self.particle_system.spawn_wall_slide_particles(
+                    wall_x, self.rect.centery, self.wall_direction, self.profile.color
+                )
             return
         
         # Variable gravity
@@ -249,11 +266,19 @@ class Player(pygame.sprite.Sprite):
             for sprite in self.level.platforms:
                 if sprite.rect.colliderect(self.rect):
                     if self.velocity.y > 0:
+                        # Store landing velocity before it's zeroed
+                        landing_velocity = abs(self.velocity.y)
                         self.rect.bottom = sprite.rect.top
                         self.velocity.y = 0
                         self.on_ground = True
                         self.air_timer = 0
                         self.has_double_jumped = False  # Reset double jump on landing
+                        # Spawn particles only for hard landings
+                        if hasattr(self, 'particle_system') and landing_velocity > 8:
+                            self.particle_system.spawn_landing_particles(
+                                self.rect.centerx, self.rect.bottom,
+                                landing_velocity, self.profile.color
+                            )
                     if self.velocity.y < 0:
                         self.rect.top = sprite.rect.bottom
                         self.velocity.y = 0
@@ -472,11 +497,13 @@ class Player(pygame.sprite.Sprite):
             hair_offset = math.sin(pygame.time.get_ticks() * 0.01) * 3
             # Main hair body
             pygame.draw.circle(self.image, color, (center_x, 10), 7)
-            pygame.draw.circle(self.image, color, (center_x - 5, 8), 4)
-            # Flowing hair strands (animated)
-            pygame.draw.circle(self.image, color, (center_x + 7 + hair_offset, 8), 4)
-            pygame.draw.circle(self.image, color, (center_x + 10 + hair_offset, 11), 3)
-            pygame.draw.circle(self.image, color, (center_x + 12 + hair_offset, 14), 2)
+            # Hair direction based on facing
+            hair_direction = 1 if self.facing_right else -1
+            pygame.draw.circle(self.image, color, (center_x - 5 * hair_direction, 8), 4)
+            # Flowing hair strands (animated, trail behind based on facing direction)
+            pygame.draw.circle(self.image, color, (center_x + hair_direction * (7 + hair_offset), 8), 4)
+            pygame.draw.circle(self.image, color, (center_x + hair_direction * (10 + hair_offset), 11), 3)
+            pygame.draw.circle(self.image, color, (center_x + hair_direction * (12 + hair_offset), 14), 2)
             # Blue jacket/hoodie body
             pygame.draw.rect(self.image, (100, 160, 200), (center_x - 7, 17, 14, 20))
             # Jacket details (darker blue outline)
@@ -543,13 +570,21 @@ class Player(pygame.sprite.Sprite):
 
             # ICONIC GOLD SCARF (signature N++ feature, flowing dynamically)
             scarf_color = (255, 200, 50)  # Gold/yellow scarf
-            scarf_end_x = center_x - int(self.velocity.x * 2.5) - 12
+            # Scarf trails behind based on movement or facing direction
+            if abs(self.velocity.x) > 0.5:
+                # When moving, scarf trails behind opposite to velocity
+                scarf_end_x = center_x - int(self.velocity.x * 2.5)
+                scarf_mid_x = center_x - int(self.velocity.x * 1.2)
+            else:
+                # When stationary, scarf hangs based on facing direction
+                facing_offset = -12 if self.facing_right else 12
+                scarf_end_x = center_x + facing_offset
+                scarf_mid_x = center_x + facing_offset // 2
             scarf_end_y = 12 + int(abs(self.velocity.y) * 0.3)
+            scarf_mid_y = 11 + int(abs(self.velocity.y) * 0.15)
             # Scarf base (attached to neck)
             pygame.draw.circle(self.image, scarf_color, (center_x, 13), 3)
             # Flowing scarf trail (multiple segments for flow effect)
-            scarf_mid_x = center_x - int(self.velocity.x * 1.2) - 6
-            scarf_mid_y = 11 + int(abs(self.velocity.y) * 0.15)
             pygame.draw.line(self.image, scarf_color, (center_x, 13), (scarf_mid_x, scarf_mid_y), 3)
             pygame.draw.line(self.image, scarf_color, (scarf_mid_x, scarf_mid_y), (scarf_end_x, scarf_end_y), 2)
             # Scarf tip
@@ -600,8 +635,16 @@ class Player(pygame.sprite.Sprite):
         # Fell off world
         if self.rect.top > SCREEN_HEIGHT:
             self.reset()
-            
+
         self.update_visuals()
+
+        # Spawn running particles when moving fast
+        if abs(self.velocity.x) > 5 and self.on_ground:
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_run_particles(
+                    self.rect.centerx - (self.velocity.x * 2),
+                    self.rect.bottom, self.velocity.x, self.profile.color
+                )
     
     def reset(self):
         """Reset player to starting position"""
