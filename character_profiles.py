@@ -1,9 +1,61 @@
+"""
+Character physics profiles for the movement demo.
+
+Each CharacterProfile is a dataclass defining movement feel, jump behavior,
+abilities, and physics constants. Use the CHARACTERS dict for easy access.
+
+Quick Reference - Typical Ranges:
+    walk_speed: 3.0-6.0       run_speed: 6.0-12.0
+    acceleration: 0.2-2.0     (low=slidey, high=snappy)
+    gravity: 0.4-1.0          (low=floaty, high=weighty)
+    jump_force: 10.0-18.0
+
+See CLAUDE.md for full documentation on adding new characters.
+"""
+
 from dataclasses import dataclass
 from typing import Tuple
 
+
 @dataclass
 class CharacterProfile:
-    name: str = "" # Optional display name if different from ID name
+    """
+    Dataclass defining a character's physics and abilities.
+    
+    Movement Fields:
+        walk_speed: Base horizontal speed (3.0-6.0 typical)
+        run_speed: Speed when holding run button (6.0-12.0)
+        acceleration: How fast to reach max speed (0.2=sluggish, 2.0=instant)
+        deceleration: How fast to stop when not pressing direction
+        skid_deceleration: Stopping speed when pressing opposite direction
+        has_momentum: True=Mario-like sliding, False=instant direction changes
+        
+    Jump Fields:
+        jump_force: Initial upward velocity (10.0-18.0)
+        jump_force_run_bonus: Extra height when running fast (Mario-style)
+        variable_jump: True=hold longer to jump higher
+        has_double_jump: Allow second jump in air (Celeste-style)
+        
+    Ability Fields:
+        has_dash: Enable dash ability
+        dash_speed: Horizontal speed during dash
+        dash_duration: Frames the dash lasts
+        
+    Physics Fields:
+        gravity: Downward acceleration (0.4=floaty, 1.0=weighty)
+        falling_gravity: Gravity when falling (often higher than rising)
+        max_fall_speed: Terminal velocity
+        air_acceleration_multiplier: Air control (0.0=none, 1.0=full)
+        
+    Wall Fields:
+        has_wall_slide: Slow fall when touching wall
+        has_wall_jump: Can jump off walls
+        wall_slide_speed: Fall speed when wall sliding
+        wall_jump_style: "celeste", "smb", or "npp" - affects jump direction
+        wall_stick_time: Frames to stick to wall before sliding
+    """
+    
+    name: str = ""
     
     # Movement
     walk_speed: float = 0.0
@@ -40,14 +92,15 @@ class CharacterProfile:
     color: Tuple[int, int, int] = (255, 255, 255)
     description: str = ""
     
-    # Wall Slide / Jump (Defaults at end)
+    # Wall Slide / Jump
     has_wall_slide: bool = False
     wall_slide_speed: float = 2.0
     has_wall_jump: bool = False
     wall_jump_style: str = "celeste"
     wall_stick_time: int = 0
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
+        """Store defaults and validate physics values."""
         self._defaults = {
             "gravity": self.gravity,
             "falling_gravity": self.falling_gravity,
@@ -55,10 +108,30 @@ class CharacterProfile:
             "acceleration": self.acceleration,
             "jump_force": self.jump_force
         }
+        self._validate()
 
-    def reset_physics(self):
+    def reset_physics(self) -> None:
+        """Reset physics values to their original defaults."""
         for key, value in self._defaults.items():
             setattr(self, key, value)
+    
+    def _validate(self) -> None:
+        """Warn about physics values that might cause issues."""
+        warnings = []
+        
+        if self.gravity <= 0:
+            warnings.append(f"gravity={self.gravity} (should be > 0)")
+        if self.jump_force <= 0:
+            warnings.append(f"jump_force={self.jump_force} (should be > 0)")
+        if self.walk_speed < 0:
+            warnings.append(f"walk_speed={self.walk_speed} (should be >= 0)")
+        if self.acceleration <= 0:
+            warnings.append(f"acceleration={self.acceleration} (should be > 0)")
+        if self.wall_jump_style not in ("celeste", "smb", "npp"):
+            warnings.append(f"wall_jump_style='{self.wall_jump_style}' (should be celeste/smb/npp)")
+        
+        if warnings and self.name:
+            print(f"[CharacterProfile] Warning for '{self.name}': {', '.join(warnings)}")
 
 
 # Mario: Momentum-based, weighty, speed-dependent jumps
