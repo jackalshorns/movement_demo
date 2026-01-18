@@ -4,8 +4,9 @@ from character_profiles import CharacterProfile
 import math
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, level, profile: CharacterProfile):
+    def __init__(self, pos, level, profile: CharacterProfile, sound_manager=None):
         super().__init__()
+        self.sound_manager = sound_manager
         self.original_pos = pos
         self.level = level
         self.profile = profile
@@ -81,6 +82,12 @@ class Player(pygame.sprite.Sprite):
                         self.rect.centerx, self.rect.centery,
                         self.dash_direction, self.profile.color
                     )
+                
+                # Sound & Haptics
+                if self.sound_manager:
+                    self.sound_manager.play("dash")
+                if controller and controller.connected:
+                    controller.rumble(0.5, 0.8, 200)
 
         # If dashing, override normal movement
         if self.dash_active:
@@ -146,6 +153,14 @@ class Player(pygame.sprite.Sprite):
         if self.profile.has_momentum and self.on_ground:
             if (target_speed > 0 and self.velocity.x < -0.5) or (target_speed < 0 and self.velocity.x > 0.5):
                 self.is_skidding = True
+                
+                # Sound & Haptics (continuous)
+                if self.sound_manager and pygame.time.get_ticks() % 10 == 0: # Limit frequency
+                   pass # Looping sound handling is tricky without channels, maybe just one-shot for now or noise
+                   # self.sound_manager.play("skid") # Too spammy if not handled carefully
+                
+                if controller and controller.connected and pygame.time.get_ticks() % 5 == 0:
+                    controller.rumble(0.2, 0.0, 50)
         
         # Apply acceleration/deceleration
         if target_speed != 0:
@@ -199,7 +214,7 @@ class Player(pygame.sprite.Sprite):
         # Update button state for next frame
         self.jump_button_was_pressed = jump_button_pressed
 
-    def apply_gravity(self):
+    def apply_gravity(self, controller=None):
         # Wall slide reduces fall speed
         if self.on_wall and self.profile.has_wall_slide and self.velocity.y > 0:
             self.velocity.y = min(self.velocity.y, self.profile.wall_slide_speed)
@@ -207,8 +222,13 @@ class Player(pygame.sprite.Sprite):
             if hasattr(self, 'particle_system'):
                 wall_x = self.rect.left if self.wall_direction == -1 else self.rect.right
                 self.particle_system.spawn_wall_slide_particles(
-                    wall_x, self.rect.centery, self.wall_direction, self.profile.color
+                    wall_x, self.rect.left if self.wall_direction == -1 else self.rect.right, self.rect.centery, self.wall_direction, self.profile.color
                 )
+            
+            # Wall Slide Haptics
+            if controller and controller.connected and pygame.time.get_ticks() % 10 == 0:
+                 controller.rumble(0.1, 0.0, 50)
+            
             return
         
         # Variable gravity
@@ -251,7 +271,7 @@ class Player(pygame.sprite.Sprite):
         if self.on_wall and not was_on_wall:
             self.wall_stick_timer = self.profile.wall_stick_time
 
-    def check_collisions(self, direction):
+    def check_collisions(self, direction, controller=None):
         if direction == 'horizontal':
             for sprite in self.level.platforms:
                 if sprite.rect.colliderect(self.rect):
@@ -279,11 +299,20 @@ class Player(pygame.sprite.Sprite):
                                 self.rect.centerx, self.rect.bottom,
                                 landing_velocity, self.profile.color
                             )
+                        
+                        # Land Sound & Haptics
+                        if landing_velocity > 2: # Ignore tiny bumps
+                            if self.sound_manager:
+                                self.sound_manager.play("land")
+                            
+                            if controller and controller.connected:
+                                intensity = min(landing_velocity / 20.0, 1.0)
+                                controller.rumble(intensity, intensity * 0.5, 200)
                     if self.velocity.y < 0:
                         self.rect.top = sprite.rect.bottom
                         self.velocity.y = 0
 
-    def jump(self):
+    def jump(self, controller=None):
         # Wall jump takes priority
         if self.profile.has_wall_jump and self.on_wall and self.jump_buffer_timer > 0:
             # Check directional input relative to wall
@@ -365,6 +394,17 @@ class Player(pygame.sprite.Sprite):
             
             if can_double_jump:
                 self.has_double_jumped = True
+
+            # Jump Sound & Haptics
+            if self.sound_manager:
+                sound_name = f"jump_{self.profile.name}"
+                if sound_name in self.sound_manager.sounds:
+                    self.sound_manager.play(sound_name)
+                else:
+                    self.sound_manager.play("jump")
+            
+            if controller and controller.connected:
+                 controller.rumble(0.0, 0.3, 100)
 
     def update_visuals(self):
         self.image.fill((0, 0, 0, 0))
@@ -497,8 +537,8 @@ class Player(pygame.sprite.Sprite):
             hair_offset = math.sin(pygame.time.get_ticks() * 0.01) * 3
             # Main hair body
             pygame.draw.circle(self.image, color, (center_x, 10), 7)
-            # Hair direction based on facing
-            hair_direction = 1 if self.facing_right else -1
+            # Hair direction: flows opposite to facing direction
+            hair_direction = -1 if self.facing_right else 1
             pygame.draw.circle(self.image, color, (center_x - 5 * hair_direction, 8), 4)
             # Flowing hair strands (animated, trail behind based on facing direction)
             pygame.draw.circle(self.image, color, (center_x + hair_direction * (7 + hair_offset), 8), 4)
@@ -603,30 +643,88 @@ class Player(pygame.sprite.Sprite):
             pygame.draw.line(self.image, color, (center_x, 25), (center_x - 10, 35), 2)
             pygame.draw.line(self.image, color, (center_x, 25), (center_x + 10, 35), 2)
 
+    def perform_signature_move(self):
+        if not self.sound_manager: return
+        
+        name = self.profile.name
+        
+        if name == "Link":
+            self.sound_manager.play("sword")
+            # Sword particles (arc)
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_sword_arc(
+                    self.rect.centerx, self.rect.centery, self.facing_right
+                )
+                
+        elif name == "Madeline":
+            self.sound_manager.play("laugh")
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_glitch_particles(
+                    self.rect.centerx, self.rect.centery
+                )
+                
+        elif name == "Mario":
+            self.sound_manager.play("coin")
+            # Coin particles
+            self.velocity.y = -5 # Small hop
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_coin_particles(
+                    self.rect.centerx, self.rect.top - 10
+                )
+
+        elif name == "Super Meat Boy":
+            # Squish/Blood
+            self.sound_manager.play("squish")
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_landing_particles(
+                    self.rect.centerx, self.rect.centery, 15, (255, 0, 0) # Red blood
+                )
+
+        elif name == "Ninja (N++)":
+            self.sound_manager.play("shuriken")
+            # Throw particles
+            if hasattr(self, 'particle_system'):
+                self.particle_system.spawn_shuriken(
+                    self.rect.centerx, self.rect.centery, 1 if self.facing_right else -1
+                )
+
     def update(self, controller=None):
         self.get_input(controller)
         
+        # Check Signature Input
+        if controller and controller.connected:
+            if controller.get_signature_input():
+                # Debounce: simplistic check, ideally we'd track prev state
+                # But let's assume rapid fire or add a cooldown if needed
+                # For now, let's just do it, maybe add a timer to prevent spam
+                if not hasattr(self, 'signature_cooldown') or self.signature_cooldown == 0:
+                    self.perform_signature_move()
+                    self.signature_cooldown = 20 # Frames
+        
+        if hasattr(self, 'signature_cooldown') and self.signature_cooldown > 0:
+            self.signature_cooldown -= 1
+        
         # Horizontal
         self.rect.x += self.velocity.x
-        self.check_collisions('horizontal')
+        self.check_collisions('horizontal', controller)
         
         # Check wall contact after horizontal movement
         self.check_wall_contact()
         
         # Gravity
-        self.apply_gravity()
+        self.apply_gravity(controller)
         
         # Vertical
         self.on_ground = False
         self.rect.y += self.velocity.y
-        self.check_collisions('vertical')
+        self.check_collisions('vertical', controller)
         
         # Coyote Timer
         if not self.on_ground:
             self.air_timer += 1
         
         # Jump
-        self.jump()
+        self.jump(controller)
         
         # Hazard Check
         if pygame.sprite.spritecollide(self, self.level.hazards, False):

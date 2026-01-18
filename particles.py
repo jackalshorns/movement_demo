@@ -265,3 +265,63 @@ class ParticleSystem:
                 particle_surface,
                 (int(particle.x - particle.size), int(particle.y - particle.size))
             )
+    def spawn_sword_arc(self, x, y, facing_right):
+        """Link's Sword Arc"""
+        start_angle = -math.pi/2 if facing_right else -math.pi/2
+        end_angle = 0 if facing_right else -math.pi
+        
+        particle_count = 15
+        for i in range(particle_count):
+            particle = self._get_next_particle()
+            progress = i / particle_count
+            angle = start_angle + (end_angle - start_angle) * progress
+            
+            radius = 30
+            px = x + math.cos(angle) * radius
+            py = y + math.sin(angle) * radius
+            
+            # Persist for a bit
+            lifetime = 10
+            size = 3
+            color = (200, 200, 255) # White/Blue steel
+            
+            particle.spawn(px, py, 0, 0, lifetime, color, size, gravity=0)
+
+    def spawn_glitch_particles(self, x, y):
+        """Madeline's Glitch"""
+        particle_count = 10
+        for _ in range(particle_count):
+            particle = self._get_next_particle()
+            vx = random.uniform(-5, 5)
+            vy = random.uniform(-5, 5)
+            
+            color = (random.randint(0, 255), random.randint(0, 100), random.randint(100, 255))
+            size = random.uniform(2, 5)
+            lifetime = 8
+            particle.spawn(x, y, vx, vy, lifetime, color, size, gravity=0)
+
+    def spawn_coin_particles(self, x, y):
+        """Mario's Coin"""
+        # A single coin rising or sparkles
+        particle_count = 8
+        for _ in range(particle_count):
+            particle = self._get_next_particle()
+            vx = random.uniform(-2, 2)
+            vy = random.uniform(-5, -2)
+            color = (255, 215, 0) # Gold
+            size = 3
+            lifetime = 20
+            particle.spawn(x, y, vx, vy, lifetime, color, size, gravity=0.3)
+
+    def spawn_shuriken(self, x, y, direction):
+        """Ninja's Shuriken (Simulated by particles moving together)"""
+        # Actually, let's just throw a fast stream of grey particles
+        particle_count = 5
+        for i in range(particle_count):
+            particle = self._get_next_particle()
+            vx = direction * 10
+            vy = 0
+            size = 4 if i == 0 else 2
+            color = (100, 100, 100)
+            lifetime = 30
+            particle.spawn(x - i*5*direction, y, vx, vy, lifetime, color, size, gravity=0)

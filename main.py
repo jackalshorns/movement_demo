@@ -8,6 +8,39 @@ from particles import ParticleSystem
 from ui import ControlPanel, draw_level_selector, draw_selection_overlay
 from keybindings import KeyBindings
 from controller import ControllerInput
+from sound_manager import SoundManager
+
+def draw_background(screen):
+    """Draws a subtle vertical gradient background"""
+    top_color = (15, 15, 30)  # Very dark blue
+    bottom_color = (5, 5, 10) # Almost black
+    
+    height = screen.get_height()
+    width = screen.get_width()
+    
+    # We can pre-calculate this or just draw a few large rectangles for speed
+    # A true pixel-by-pixel gradient is slow in CPU pygame.
+    # Let's use a scaled surface
+    
+    if not hasattr(draw_background, "surface"):
+        draw_background.surface = pygame.Surface((1, height))
+        for y in range(height):
+            # Lerp
+            p = y / height
+            r = top_color[0] * (1-p) + bottom_color[0] * p
+            g = top_color[1] * (1-p) + bottom_color[1] * p
+            b = top_color[2] * (1-p) + bottom_color[2] * p
+            draw_background.surface.set_at((0, y), (int(r), int(g), int(b)))
+        draw_background.surface = pygame.transform.scale(draw_background.surface, (width, height))
+    
+    screen.blit(draw_background.surface, (0, 0))
+    
+    # Optional: Draw faint grid
+    grid_color = (30, 30, 50)
+    for x in range(0, width, 50):
+        pygame.draw.line(screen, grid_color, (x, 0), (x, height), 1)
+    for y in range(0, height, 50):
+        pygame.draw.line(screen, grid_color, (0, y), (width, y), 1)
 
 def main():
     pygame.init()
@@ -18,12 +51,13 @@ def main():
     # Init Subsystems
     playground = PlaygroundManager()
     particle_system = ParticleSystem(max_particles=100)
+    sound_manager = SoundManager()
 
     # Character List for Selection
     from character_profiles import CHARACTERS, MARIO, SUPER_MEAT_BOY, ZELDA_LINK, MADELINE, N_NINJA
     char_list = [MARIO, SUPER_MEAT_BOY, ZELDA_LINK, MADELINE, N_NINJA]
 
-    player = Player((200, SCREEN_HEIGHT - 200), playground, MARIO)
+    player = Player((200, SCREEN_HEIGHT - 200), playground, MARIO, sound_manager)
     player.particle_system = particle_system
     
     # UI and Controls
@@ -156,7 +190,7 @@ def main():
                 player.velocity = pygame.math.Vector2(0, 0)
         
         # 3. Draw
-        screen.fill((25, 25, 35))
+        draw_background(screen)
         playground.draw(screen)
         particle_system.draw(screen)
         screen.blit(player.image, player.rect)

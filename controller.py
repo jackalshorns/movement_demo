@@ -161,6 +161,16 @@ class ControllerInput:
         return False
 
     
+    def get_signature_input(self):
+        """Returns True if Signature button (Circle/B) is pressed"""
+        if not self.connected:
+            return False
+            
+        # PS5: Circle=1, Xbox: B=1
+        if self.joystick.get_numbuttons() > 1:
+            return self.joystick.get_button(1)
+        return False
+
     def get_name(self):
         """Get controller name if connected"""
         if self.connected:
@@ -218,3 +228,22 @@ class ControllerInput:
             if self.joystick.get_button(14): dx = 1
             
         return dx, dy
+    
+    def rumble(self, low_frequency, high_frequency, duration_ms):
+        """
+        Rumble the controller.
+        low_frequency: 0.0 to 1.0 (Strong motor)
+        high_frequency: 0.0 to 1.0 (Weak motor)
+        duration_ms: duration in milliseconds
+        """
+        if not self.connected:
+            return
+            
+        try:
+            self.joystick.rumble(low_frequency, high_frequency, duration_ms)
+        except AttributeError:
+            # Some older pygame versions or drivers might not support rumble
+            pass
+        except Exception as e:
+            if self.debug_mode:
+                print(f"Rumble failed: {e}")
