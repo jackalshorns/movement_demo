@@ -1,29 +1,7 @@
 import pygame
 from settings import *
 import random
-
-class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, color=(100, 100, 100), is_finish=False):
-        super().__init__()
-        self.image = pygame.Surface((width, height))
-        self.image.fill(color)
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.is_finish = is_finish
-
-class Key(pygame.sprite.Sprite):
-    """Victory key that appears at the end of levels"""
-    def __init__(self, x, y, color):
-        super().__init__()
-        self.image = pygame.Surface((20, 20), pygame.SRCALPHA)
-        # Draw key shape (circle + rect)
-        pygame.draw.circle(self.image, color, (10, 6), 6)
-        pygame.draw.rect(self.image, color, (8, 10, 4, 10))
-        # Teeth
-        pygame.draw.rect(self.image, color, (12, 14, 4, 3))
-        pygame.draw.rect(self.image, color, (12, 17, 4, 3))
-        
-        self.rect = self.image.get_rect(center=(x, y))
-        self.color = color
+from sprites import Platform, Key
 
 class PlaygroundManager:
     """Manages 4 different playground levels for testing"""
