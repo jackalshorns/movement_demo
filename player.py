@@ -360,100 +360,200 @@ class Player(pygame.sprite.Sprite):
         
         # Character-specific silhouettes
         if self.profile.name == "Mario":
-            # Mario: Round head with cap
-            pygame.draw.circle(self.image, color, (center_x, 10), 9)
-            # Cap brim
-            pygame.draw.rect(self.image, color, (center_x - 10, 8, 20, 3))
-            # Body (slightly rounder)
-            pygame.draw.ellipse(self.image, color, (center_x - 8, 18, 16, 24))
-            # Legs
+            # Mario: Iconic plumber look with mustache and overalls
+            # Red cap
+            pygame.draw.circle(self.image, color, (center_x, 9), 9)
+            # Cap brim (wider)
+            pygame.draw.rect(self.image, color, (center_x - 11, 7, 22, 4))
+            # "M" emblem on cap (simple)
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x, 8), 3)
+            # Face/head under cap
+            pygame.draw.circle(self.image, (255, 220, 177), (center_x, 18), 7)
+            # Mustache (iconic!)
+            pygame.draw.rect(self.image, (80, 50, 30), (center_x - 6, 18, 12, 3))
+            # Blue overalls body (rotund)
+            pygame.draw.ellipse(self.image, (40, 100, 220), (center_x - 9, 24, 18, 20))
+            # Red shirt sleeves
+            pygame.draw.circle(self.image, color, (center_x - 11, 30), 4)
+            pygame.draw.circle(self.image, color, (center_x + 11, 30), 4)
+            # Overall straps
+            pygame.draw.line(self.image, (40, 100, 220), (center_x - 3, 25), (center_x - 3, 28), 2)
+            pygame.draw.line(self.image, (40, 100, 220), (center_x + 3, 25), (center_x + 3, 28), 2)
+            # Legs (blue pants)
             leg_offset = 0
             if abs(self.velocity.x) > 0.1 and self.on_ground:
                 self.anim_offset += abs(self.velocity.x) * 0.15
                 leg_offset = math.sin(self.anim_offset) * 6
-            pygame.draw.line(self.image, color, (center_x, 42), (center_x - 5 + leg_offset, 60), 3)
-            pygame.draw.line(self.image, color, (center_x, 42), (center_x + 5 - leg_offset, 60), 3)
-            # Arms
-            pygame.draw.line(self.image, color, (center_x, 25), (center_x - 10, 35), 3)
-            pygame.draw.line(self.image, color, (center_x, 25), (center_x + 10, 35), 3)
+            pygame.draw.line(self.image, (40, 100, 220), (center_x, 44), (center_x - 5 + leg_offset, 56), 4)
+            pygame.draw.line(self.image, (40, 100, 220), (center_x, 44), (center_x + 5 - leg_offset, 56), 4)
+            # Brown shoes
+            pygame.draw.circle(self.image, (120, 70, 30), (center_x - 5 + leg_offset, 57), 3)
+            pygame.draw.circle(self.image, (120, 70, 30), (center_x + 5 - leg_offset, 57), 3)
+            # White gloves on arms
+            arm_y = 35 if self.on_ground else 30
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x - 12, arm_y), 3)
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x + 12, arm_y), 3)
             
         elif self.profile.name == "Super Meat Boy":
-            # Meat Boy: Square-ish body
-            # Head (square)
-            pygame.draw.rect(self.image, color, (center_x - 7, 3, 14, 14))
-            # Body (cube-like)
-            pygame.draw.rect(self.image, color, (center_x - 9, 18, 18, 24))
-            # Legs (stubby)
+            # Meat Boy: Cube of meat with iconic features
+            # Main meaty body (darker red, cube-like)
+            pygame.draw.rect(self.image, color, (center_x - 10, 5, 20, 38))
+            # Lighter meat highlights (giving it texture)
+            pygame.draw.rect(self.image, (160, 60, 60), (center_x - 8, 7, 3, 34))
+            pygame.draw.rect(self.image, (160, 60, 60), (center_x + 5, 7, 3, 34))
+            # Big white eyes (iconic Meat Boy look)
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x - 4, 14), 4)
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x + 4, 14), 4)
+            # Black pupils (looking forward)
+            pygame.draw.circle(self.image, (0, 0, 0), (center_x - 3, 14), 2)
+            pygame.draw.circle(self.image, (0, 0, 0), (center_x + 3, 14), 2)
+            # Determined mouth/grimace
+            pygame.draw.rect(self.image, (80, 20, 20), (center_x - 4, 22, 8, 2))
+            # Stubby arms
+            pygame.draw.rect(self.image, color, (center_x - 14, 26, 4, 8))
+            pygame.draw.rect(self.image, color, (center_x + 10, 26, 4, 8))
+            # Stubby legs with animation
             leg_offset = 0
             if abs(self.velocity.x) > 0.1 and self.on_ground:
                 self.anim_offset += abs(self.velocity.x) * 0.15
                 leg_offset = math.sin(self.anim_offset) * 5
-            pygame.draw.rect(self.image, color, (center_x - 8 + leg_offset, 42, 6, 18))
-            pygame.draw.rect(self.image, color, (center_x + 2 - leg_offset, 42, 6, 18))
+            pygame.draw.rect(self.image, color, (center_x - 8 + leg_offset, 43, 6, 16))
+            pygame.draw.rect(self.image, color, (center_x + 2 - leg_offset, 43, 6, 16))
+            # Feet (slightly darker)
+            pygame.draw.rect(self.image, (100, 30, 30), (center_x - 8 + leg_offset, 57, 6, 3))
+            pygame.draw.rect(self.image, (100, 30, 30), (center_x + 2 - leg_offset, 57, 6, 3))
             
         elif self.profile.name == "Link":
-            # Link: Pointy hat
-            # Hat (triangle)
-            pygame.draw.polygon(self.image, color, [(center_x, 2), (center_x - 8, 12), (center_x + 8, 12)])
-            # Head
-            pygame.draw.circle(self.image, color, (center_x, 15), 6)
-            # Body (tunic shape)
-            pygame.draw.polygon(self.image, color, [(center_x, 20), (center_x - 10, 25), (center_x - 8, 42), (center_x + 8, 42), (center_x + 10, 25)])
-            # Legs
+            # Link: Iconic green tunic and hat
+            # Green pointy hat (triangle)
+            pygame.draw.polygon(self.image, color, [(center_x, 2), (center_x - 9, 13), (center_x + 9, 13)])
+            # Hat detail (lighter green stripe)
+            pygame.draw.polygon(self.image, (60, 210, 60), [(center_x, 4), (center_x - 7, 13), (center_x + 7, 13)])
+            # Blonde hair peeking out
+            pygame.draw.rect(self.image, (220, 190, 100), (center_x - 7, 13, 14, 3))
+            # Face (peach/tan skin)
+            pygame.draw.circle(self.image, (255, 220, 177), (center_x, 20), 6)
+            # Eyes (simple dots)
+            pygame.draw.circle(self.image, (40, 60, 120), (center_x - 2, 19), 1)
+            pygame.draw.circle(self.image, (40, 60, 120), (center_x + 2, 19), 1)
+            # Green tunic body (triangular/trapezoid shape)
+            pygame.draw.polygon(self.image, color, [(center_x, 25), (center_x - 11, 28), (center_x - 9, 44), (center_x + 9, 44), (center_x + 11, 28)])
+            # Belt (brown)
+            pygame.draw.rect(self.image, (120, 70, 30), (center_x - 9, 36, 18, 3))
+            # Belt buckle (gold)
+            pygame.draw.rect(self.image, (220, 180, 50), (center_x - 2, 36, 4, 3))
+            # White undershirt collar
+            pygame.draw.rect(self.image, (255, 255, 255), (center_x - 5, 25, 10, 2))
+            # Green sleeves/arms
+            pygame.draw.line(self.image, color, (center_x - 10, 28), (center_x - 14, 36), 3)
+            pygame.draw.line(self.image, color, (center_x + 10, 28), (center_x + 14, 36), 3)
+            # White tights/legs
             leg_offset = 0
             if abs(self.velocity.x) > 0.1 and self.on_ground:
                 self.anim_offset += abs(self.velocity.x) * 0.15
                 leg_offset = math.sin(self.anim_offset) * 6
-            pygame.draw.line(self.image, color, (center_x, 42), (center_x - 4 + leg_offset, 60), 3)
-            pygame.draw.line(self.image, color, (center_x, 42), (center_x + 4 - leg_offset, 60), 3)
-            # Shield arm
-            pygame.draw.circle(self.image, color, (center_x - 12, 30), 4)
+            pygame.draw.line(self.image, (255, 255, 255), (center_x, 44), (center_x - 4 + leg_offset, 57), 3)
+            pygame.draw.line(self.image, (255, 255, 255), (center_x, 44), (center_x + 4 - leg_offset, 57), 3)
+            # Brown boots
+            pygame.draw.circle(self.image, (120, 70, 30), (center_x - 4 + leg_offset, 58), 3)
+            pygame.draw.circle(self.image, (120, 70, 30), (center_x + 4 - leg_offset, 58), 3)
+            # Hylian Shield (left side, blue and silver)
+            pygame.draw.circle(self.image, (180, 180, 200), (center_x - 15, 32), 5)
+            pygame.draw.circle(self.image, (60, 100, 180), (center_x - 15, 32), 3)
             
         elif self.profile.name == "Madeline":
-            # Madeline: Hair flowing
-            # Head
+            # Madeline: Iconic pink/red hair and blue jacket from Celeste
+            # Face (peach skin)
+            pygame.draw.circle(self.image, (255, 220, 177), (center_x, 12), 6)
+            # Eyes (simple dots, looking determined)
+            pygame.draw.circle(self.image, (60, 40, 30), (center_x - 2, 11), 1)
+            pygame.draw.circle(self.image, (60, 40, 30), (center_x + 2, 11), 1)
+            # Iconic flowing strawberry-pink hair
+            hair_offset = math.sin(pygame.time.get_ticks() * 0.01) * 3
+            # Main hair body
             pygame.draw.circle(self.image, color, (center_x, 10), 7)
-            # Hair (flowing to side)
-            hair_offset = math.sin(pygame.time.get_ticks() * 0.01) * 2
-            pygame.draw.circle(self.image, color, (center_x + 6 + hair_offset, 8), 4)
-            pygame.draw.circle(self.image, color, (center_x + 8 + hair_offset, 11), 3)
-            # Body (slim)
-            pygame.draw.line(self.image, color, (center_x, 17), (center_x, 40), 3)
-            # Legs
+            pygame.draw.circle(self.image, color, (center_x - 5, 8), 4)
+            # Flowing hair strands (animated)
+            pygame.draw.circle(self.image, color, (center_x + 7 + hair_offset, 8), 4)
+            pygame.draw.circle(self.image, color, (center_x + 10 + hair_offset, 11), 3)
+            pygame.draw.circle(self.image, color, (center_x + 12 + hair_offset, 14), 2)
+            # Blue jacket/hoodie body
+            pygame.draw.rect(self.image, (100, 160, 200), (center_x - 7, 17, 14, 20))
+            # Jacket details (darker blue outline)
+            pygame.draw.line(self.image, (70, 120, 160), (center_x - 7, 17), (center_x - 7, 37), 1)
+            pygame.draw.line(self.image, (70, 120, 160), (center_x + 7, 17), (center_x + 7, 37), 1)
+            # Zipper (white)
+            pygame.draw.line(self.image, (255, 255, 255), (center_x, 18), (center_x, 36), 1)
+            # Arms with blue jacket sleeves
+            arm_y = 25
+            pygame.draw.line(self.image, (100, 160, 200), (center_x - 7, arm_y), (center_x - 12, 35), 3)
+            pygame.draw.line(self.image, (100, 160, 200), (center_x + 7, arm_y), (center_x + 12, 35), 3)
+            # Hands (peach)
+            pygame.draw.circle(self.image, (255, 220, 177), (center_x - 12, 35), 2)
+            pygame.draw.circle(self.image, (255, 220, 177), (center_x + 12, 35), 2)
+            # Dark blue pants/legs
             leg_offset = 0
             if abs(self.velocity.x) > 0.1 and self.on_ground:
                 self.anim_offset += abs(self.velocity.x) * 0.15
                 leg_offset = math.sin(self.anim_offset) * 7
-            pygame.draw.line(self.image, color, (center_x, 40), (center_x - 4 + leg_offset, 60), 2)
-            pygame.draw.line(self.image, color, (center_x, 40), (center_x + 4 - leg_offset, 60), 2)
-            # Arms
-            pygame.draw.line(self.image, color, (center_x, 23), (center_x - 8, 33), 2)
-            pygame.draw.line(self.image, color, (center_x, 23), (center_x + 8, 33), 2)
+            pygame.draw.line(self.image, (40, 50, 100), (center_x, 37), (center_x - 4 + leg_offset, 58), 3)
+            pygame.draw.line(self.image, (40, 50, 100), (center_x, 37), (center_x + 4 - leg_offset, 58), 3)
+            # Shoes (white/grey)
+            pygame.draw.circle(self.image, (220, 220, 220), (center_x - 4 + leg_offset, 59), 2)
+            pygame.draw.circle(self.image, (220, 220, 220), (center_x + 4 - leg_offset, 59), 2)
             
         elif self.profile.name == "Ninja (N++)":
-            # N++ Ninja: Minimalist stick figure but sleek
-            # Head (small circle)
-            pygame.draw.circle(self.image, color, (center_x, 8), 6)
-            # Body (thin line)
-            pygame.draw.line(self.image, color, (center_x, 14), (center_x, 40), 1)
-            # Legs (long and thin)
+            # N++ Ninja: Sleek minimalist ninja with iconic gold scarf
+            # Dynamic leaning based on velocity
+            lean = -self.velocity.x * 0.5
+
+            # Head (small, sleek black circle)
+            pygame.draw.circle(self.image, (20, 20, 20), (center_x + int(lean * 0.3), 8), 6)
+            # White eyes (ninja eyes visible through mask)
+            eye_offset = int(self.velocity.x * 0.1)
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x - 2 + eye_offset, 7), 1)
+            pygame.draw.circle(self.image, (255, 255, 255), (center_x + 2 + eye_offset, 7), 1)
+
+            # Body (thin, sleek black ninja suit)
+            body_top = (center_x + int(lean * 0.2), 14)
+            body_bottom = (center_x, 40)
+            pygame.draw.line(self.image, (40, 40, 40), body_top, body_bottom, 2)
+
+            # Ninja suit torso (slightly wider for body)
+            pygame.draw.ellipse(self.image, (40, 40, 40), (center_x - 5, 20, 10, 16))
+
+            # Legs (long and sleek, animated)
             leg_offset = 0
             if abs(self.velocity.x) > 0.1 and self.on_ground:
                 self.anim_offset += abs(self.velocity.x) * 0.15
                 leg_offset = math.sin(self.anim_offset) * 8
-            
-            # Dynamic leaning
-            lean = -self.velocity.x * 0.5
-            
-            pygame.draw.line(self.image, color, (center_x, 40), (center_x - 4 + leg_offset + lean, 60), 1)
-            pygame.draw.line(self.image, color, (center_x, 40), (center_x + 4 - leg_offset + lean, 60), 1)
-            # Arms (long)
-            pygame.draw.line(self.image, color, (center_x, 20), (center_x - 12 + lean, 35), 1)
-            pygame.draw.line(self.image, color, (center_x, 20), (center_x + 12 + lean, 35), 1)
-            # Scarf (signature N++ visual)
-            scarf_end_x = center_x - (self.velocity.x * 2) - 10
-            scarf_end_y = 10 + abs(self.velocity.y)
-            pygame.draw.line(self.image, color, (center_x, 10), (scarf_end_x, scarf_end_y), 2)
+
+            pygame.draw.line(self.image, (40, 40, 40), body_bottom, (center_x - 4 + leg_offset + int(lean), 60), 2)
+            pygame.draw.line(self.image, (40, 40, 40), body_bottom, (center_x + 4 - leg_offset + int(lean), 60), 2)
+
+            # Arms (long, fluid ninja arms)
+            arm_back = (center_x - 12 + int(lean), 32)
+            arm_forward = (center_x + 12 + int(lean), 28)
+            pygame.draw.line(self.image, (40, 40, 40), (center_x, 22), arm_back, 2)
+            pygame.draw.line(self.image, (40, 40, 40), (center_x, 22), arm_forward, 2)
+
+            # Hands (small circles)
+            pygame.draw.circle(self.image, (40, 40, 40), arm_back, 2)
+            pygame.draw.circle(self.image, (40, 40, 40), arm_forward, 2)
+
+            # ICONIC GOLD SCARF (signature N++ feature, flowing dynamically)
+            scarf_color = (255, 200, 50)  # Gold/yellow scarf
+            scarf_end_x = center_x - int(self.velocity.x * 2.5) - 12
+            scarf_end_y = 12 + int(abs(self.velocity.y) * 0.3)
+            # Scarf base (attached to neck)
+            pygame.draw.circle(self.image, scarf_color, (center_x, 13), 3)
+            # Flowing scarf trail (multiple segments for flow effect)
+            scarf_mid_x = center_x - int(self.velocity.x * 1.2) - 6
+            scarf_mid_y = 11 + int(abs(self.velocity.y) * 0.15)
+            pygame.draw.line(self.image, scarf_color, (center_x, 13), (scarf_mid_x, scarf_mid_y), 3)
+            pygame.draw.line(self.image, scarf_color, (scarf_mid_x, scarf_mid_y), (scarf_end_x, scarf_end_y), 2)
+            # Scarf tip
+            pygame.draw.circle(self.image, scarf_color, (scarf_end_x, scarf_end_y), 2)
 
         else:
             # Default stickman
