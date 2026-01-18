@@ -5,7 +5,7 @@ from playgrounds import PlaygroundManager
 from player import Player
 from particles import ParticleSystem
 
-from ui import ControlPanel, draw_level_selector, draw_selection_overlay
+from ui import ControlPanel, draw_level_selector, draw_selection_overlay, draw_pause_screen
 from keybindings import KeyBindings
 from controller import ControllerInput
 from sound_manager import SoundManager
@@ -74,6 +74,10 @@ def main():
     lb_was_pressed = False  # Track LB state for debouncing
     dpad_was_pressed_x = False  # Track D-pad state for RB mode
     dpad_was_pressed_y = False
+    
+    # Pause State
+    paused = False
+    start_was_pressed = False  # Track Start button for debouncing
 
     running = True
     while running:
@@ -170,6 +174,32 @@ def main():
             dpad_was_pressed_x = False
             dpad_was_pressed_y = False
         
+        # Start Button: Toggle Pause (DualSense=6, Xbox=7)
+        start_pressed = False
+        if controller.connected and controller.joystick:
+            num_buttons = controller.joystick.get_numbuttons()
+            if num_buttons > 6:
+                start_pressed = controller.joystick.get_button(6)  # DualSense Options
+            elif num_buttons > 7:
+                start_pressed = controller.joystick.get_button(7)  # Xbox Start
+        
+        if start_pressed and not start_was_pressed:
+            paused = not paused
+        start_was_pressed = start_pressed
+        
+        # Skip game logic if paused
+        if paused:
+            # Draw everything first
+            draw_background(screen)
+            playground.draw(screen)
+            screen.blit(player.image, player.rect)
+            ui.draw(screen, keybindings)
+            draw_level_selector(screen, playground, keybindings)
+            # Draw pause overlay on top
+            draw_pause_screen(screen)
+            pygame.display.flip()
+            clock.tick(FPS)
+            continue
         
         # Main Selection State Machine
         

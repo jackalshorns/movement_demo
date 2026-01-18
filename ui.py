@@ -77,9 +77,10 @@ class Slider:
         track_color = (100, 100, 60) if highlighted else (60, 60, 60)
         pygame.draw.rect(surface, track_color, self.rect)
         
-        # Default tick mark (white line)
+        # Default tick mark (character color)
         default_x = self.get_default_x()
-        pygame.draw.line(surface, (255, 255, 255), 
+        tick_color = profile.color  # Use character's color instead of white
+        pygame.draw.line(surface, tick_color, 
                         (default_x, self.rect.y - 3), 
                         (default_x, self.rect.y + self.rect.height + 3), 2)
         
@@ -379,3 +380,76 @@ def draw_selection_overlay(surface, mode_type, current_index, items):
     helper = font_desc.render("Use D-Pad to Select • Release Trigger to Confirm", True, (200, 200, 200))
     helper_rect = helper.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
     surface.blit(helper, helper_rect)
+
+
+def draw_pause_screen(surface):
+    """Draw the pause/help screen overlay."""
+    # Semi-transparent overlay
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 200))
+    surface.blit(overlay, (0, 0))
+    
+    # Fonts
+    font_title = pygame.font.SysFont(None, 48, bold=True)
+    font_header = pygame.font.SysFont(None, 28, bold=True)
+    font_text = pygame.font.SysFont(None, 20)
+    
+    # Title
+    title = font_title.render("PAUSE / HELP", True, (255, 255, 100))
+    title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, 40))
+    surface.blit(title, title_rect)
+    
+    y = 80
+    
+    # === CONTROLS SECTION ===
+    controls_header = font_header.render("CONTROLS", True, (100, 200, 255))
+    surface.blit(controls_header, (50, y))
+    y += 30
+    
+    controls = [
+        ("Left Stick / D-Pad", "Move character left and right"),
+        ("Cross (X) / Square", "Jump - hold longer to jump higher"),
+        ("Triangle (△)", "Dash - quick burst in facing direction (Link only)"),
+        ("Circle (○)", "Signature Move - character-specific ability"),
+        ("L2 (Hold) + D-Pad", "Select Character - release to confirm"),
+        ("R2 (Hold) + D-Pad", "Select Level - release to confirm"),
+        ("L1", "Reset all physics sliders to character defaults"),
+        ("R1 (Hold) + D-Pad", "Adjust physics - Up/Down to select, Left/Right to change"),
+        ("Options / Start", "Toggle this pause/help screen"),
+    ]
+    
+    for button, desc in controls:
+        btn_surf = font_text.render(button, True, (255, 220, 100))
+        desc_surf = font_text.render(desc, True, (200, 200, 200))
+        surface.blit(btn_surf, (60, y))
+        surface.blit(desc_surf, (250, y))
+        y += 22
+    
+    y += 15
+    
+    # === PHYSICS SECTION ===
+    physics_header = font_header.render("PHYSICS SETTINGS", True, (100, 255, 150))
+    surface.blit(physics_header, (50, y))
+    y += 30
+    
+    physics = [
+        ("Gravity", "How fast you fall down. Higher = heavier, falls faster."),
+        ("Fall Grav", "Extra gravity when falling (not jumping). Makes falls snappier."),
+        ("Speed", "How fast you run left and right. Higher = faster movement."),
+        ("Accel", "How quickly you speed up. Low = slippery ice, High = instant control."),
+        ("Jump", "How high you jump. Higher = can reach taller platforms."),
+    ]
+    
+    for param, desc in physics:
+        param_surf = font_text.render(param, True, (150, 255, 150))
+        desc_surf = font_text.render(desc, True, (200, 200, 200))
+        surface.blit(param_surf, (60, y))
+        surface.blit(desc_surf, (150, y))
+        y += 22
+    
+    y += 20
+    
+    # Footer
+    footer = font_text.render("Press Start/Options to resume", True, (180, 180, 180))
+    footer_rect = footer.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
+    surface.blit(footer, footer_rect)
