@@ -46,7 +46,15 @@ NEW_CHARACTER = CharacterProfile(
 )
 ```
 
-Then add to `CHARACTERS` dict at bottom and import in [`ui.py`](file:///Users/jackalshorns/Antigravity/movement_demo/ui.py).
+Then add to `CHARACTERS` dict at bottom.
+
+**For visuals:** Add a draw function in [`player_renderer.py`](file:///Users/jackalshorns/Antigravity/movement_demo/player_renderer.py):
+
+```python
+def draw_new_char(surface, center_x, color, velocity_x, on_ground, anim_offset):
+    # Drawing code here
+    return anim_offset
+```
 
 ---
 
@@ -88,7 +96,10 @@ The **UI sliders** (right panel) modify these fields on the active `CharacterPro
 - `acceleration`
 - `jump_force`
 
-Press **LB** (controller) to reset sliders to character defaults.
+**Controller adjustments:**
+
+- Press **LB (L1)** to reset all sliders to character defaults
+- Hold **RB (R1)** + D-Pad Up/Down to select, Left/Right to adjust
 
 ---
 
@@ -142,16 +153,18 @@ Call from `player.py` via `self.particle_system.spawn_my_effect(...)`.
 
 ```
 main.py              # Game loop, event handling, state machine
-├── player.py        # Player class (physics, input, collisions, visuals)
+├── player.py        # Player class (physics, input, collisions)
+├── player_renderer.py    # Character sprite drawing (per-character)
 ├── controller.py    # Gamepad input wrapper (PS5/Xbox)
 ├── keybindings.py   # Keyboard input + save/load
 ├── playgrounds.py   # Level definitions (PlaygroundManager)
-├── level.py         # Legacy level code (mostly unused)
+├── sprites.py       # Platform, Key, Hazard sprite classes
 ├── character_profiles.py  # CharacterProfile dataclass + 5 presets
-├── particles.py     # Object-pooled particle system
+├── character_faces.py     # Pixel art face definitions
+├── particles.py     # Object-pooled particle system (with caching)
 ├── sound_manager.py # Audio loading/playback
 ├── sound_generator.py     # Procedural sound generation
-├── ui.py            # HUD, sliders, overlays
+├── ui.py            # HUD, sliders, overlays, pause screen
 └── settings.py      # Screen dimensions, FPS
 ```
 
@@ -161,12 +174,13 @@ main.py              # Game loop, event handling, state machine
 
 | Class | File | Purpose |
 |-------|------|---------|
-| `Player` | player.py | 760-line monolith handling all player logic |
+| `Player` | player.py | ~530 lines handling physics, input, collisions |
 | `CharacterProfile` | character_profiles.py | Dataclass defining physics/abilities |
 | `PlaygroundManager` | playgrounds.py | Level loader with 6 built-in levels |
 | `ControllerInput` | controller.py | Gamepad abstraction |
-| `ParticleSystem` | particles.py | Pool of 100 reusable particles |
+| `ParticleSystem` | particles.py | Pool of 100 particles + surface caching |
 | `ControlPanel` | ui.py | Left/right HUD panels |
+| `render_character` | player_renderer.py | Dispatcher for character sprite drawing |
 
 ---
 
@@ -174,9 +188,12 @@ main.py              # Game loop, event handling, state machine
 
 ```
 Normal gameplay
-  └─ Hold LT → Character selection mode (D-pad navigates)
-  └─ Hold RT → Level selection mode (D-pad navigates)
-  └─ Release trigger → Apply selection
+  ├─ Hold LT (L2) → Character selection mode (D-pad navigates)
+  ├─ Hold RT (R2) → Level selection mode (D-pad navigates)
+  ├─ Release trigger → Apply selection
+  ├─ Hold RB (R1) → Physics adjustment mode (D-pad adjusts sliders)
+  ├─ Press LB (L1) → Reset physics to defaults
+  └─ Press Start/Options → Toggle pause/help screen
 ```
 
 ---
@@ -230,9 +247,9 @@ Normal gameplay
 - **Player movement logic**: `player.py` → `get_input()`, `apply_gravity()`
 - **Collision detection**: `player.py` → `check_collisions()`, `check_wall_contact()`
 - **Jump logic**: `player.py` → `jump()` (handles ground, wall, double)
-- **Visual effects**: `player.py` → `update_visuals()` (color, stretch, particles)
+- **Visual effects**: `player_renderer.py` → `draw_mario()`, `draw_madeline()`, etc.
 - **Level layouts**: `playgrounds.py` → individual `create_*` methods
-- **UI drawing**: `ui.py` → `draw_left_panel()`, `draw_right_panel()`
+- **UI drawing**: `ui.py` → `draw_left_panel()`, `draw_right_panel()`, `draw_pause_screen()`
 
 ### Debugging
 
