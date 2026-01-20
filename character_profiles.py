@@ -98,6 +98,7 @@ class CharacterProfile:
     has_wall_jump: bool = False
     wall_jump_style: str = "celeste"
     wall_stick_time: int = 0
+    has_ceiling_hang: bool = False  # SMB can stick to ceilings
     
     def __post_init__(self) -> None:
         """Store defaults and validate physics values."""
@@ -205,9 +206,10 @@ SUPER_MEAT_BOY = CharacterProfile(
     jump_buffer=3,
     # Visual
     color=(120, 40, 40),  # Dark red/brown (Meat Boy)
-    description="Ultra-responsive, wall jumps, buzzsaw survivor",
+    description="Ultra-responsive, wall jumps, ceiling hang, buzzsaw survivor",
     wall_jump_style="smb",
-    wall_stick_time=15
+    wall_stick_time=15,
+    has_ceiling_hang=True  # SMB can stick to ceilings
 )
 
 # Zelda/Link: Precise, simple physics, dash mechanics
@@ -253,9 +255,9 @@ MADELINE = CharacterProfile(
     # Movement
     walk_speed=5.5,
     run_speed=5.5,  # No run mechanic
-    acceleration=1.2,
-    deceleration=1.2,
-    skid_deceleration=1.2,
+    acceleration=1.8,  # Snappy - reaches full speed in ~6 frames
+    deceleration=1.5,
+    skid_deceleration=1.5,
     has_momentum=False,  # Responsive control
     # Jump
     jump_force=14.5,
@@ -267,21 +269,21 @@ MADELINE = CharacterProfile(
     has_wall_slide=True,
     has_dash=True,  # Celeste's signature dash
     dash_speed=15.0,  # Fast dash
-    dash_duration=12,  # Shorter duration
+    dash_duration=15,  # Original Celeste timing
     # Physics
     gravity=0.65,
     falling_gravity=0.9,
     max_fall_speed=13.0,
-    air_acceleration_multiplier=0.85,  # Good air control
+    air_acceleration_multiplier=0.65,  # Matches Celeste's 650/1000 ratio
     no_horizontal_drag=True,
     wall_slide_speed=1.5,  # Moderate wall slide
     # Advanced
     run_buffer_frames=0,
-    coyote_time=5,
+    coyote_time=6,  # Generous like original
     jump_buffer=4,
     # Visual
     color=(230, 80, 120),  # Strawberry pink/red (Madeline's hair)
-    description="Double jump + wall jump, air dash, excellent air control",
+    description="Double jump + wall jump, air dash, snappy controls",
     wall_jump_style="celeste",
     wall_stick_time=10
 )

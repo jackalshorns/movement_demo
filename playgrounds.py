@@ -66,7 +66,7 @@ class PlaygroundManager:
     def get_name(self):
         """Get current playground name"""
         names = [
-            "Level 1: Flat Run", 
+            "Level 1: Mario World", 
             "Level 2: Wall Climb", 
             "Level 3: SMB Factory",
             "Level 4: Celeste Summit",
@@ -79,17 +79,78 @@ class PlaygroundManager:
     
     
     def create_flat_playground(self):
-        """Playground 1: Flat platform with start and finish"""
-        ground_y = SCREEN_HEIGHT - 80
+        """Playground 1: Mario 1-1 Style (Pipes, Blocks, Gaps)"""
+        ground_y = SCREEN_HEIGHT - 60
+        block_size = 32  # Classic block size
         
-        self.platforms.add(Platform(0, ground_y, 300, 80, (60, 100, 60)))
-        self.start_pos = (100, ground_y - 10)
+        # Colors (Mario-inspired)
+        ground_color = (139, 69, 19)      # Brown ground
+        brick_color = (180, 100, 60)      # Brick blocks
+        question_color = (255, 200, 50)   # Question blocks (yellow)
+        pipe_color = (34, 139, 34)        # Green pipes
         
-        self.platforms.add(Platform(300, ground_y, 700, 80, (80, 80, 80)))
+        # === GROUND SECTIONS (with gaps) ===
+        # Section 1: Start area
+        self.platforms.add(Platform(0, ground_y, 400, 60, ground_color))
+        self.start_pos = (60, ground_y - 10)
         
-        finish = Platform(1000, ground_y, 280, 80, (180, 150, 50), is_finish=True)
+        # Gap 1 (small pit)
+        
+        # Section 2: After first gap
+        self.platforms.add(Platform(450, ground_y, 200, 60, ground_color))
+        
+        # Gap 2 (wider pit)
+        
+        # Section 3: Main area with pipes
+        self.platforms.add(Platform(700, ground_y, 500, 60, ground_color))
+        
+        # === QUESTION BLOCKS (to bump from below) ===
+        # Single question block early on
+        self.platforms.add(Platform(200, ground_y - 120, block_size, block_size, question_color, block_type='question'))
+        
+        # Row of blocks: brick-question-brick-question-brick
+        row_y = ground_y - 120
+        row_x = 280
+        self.platforms.add(Platform(row_x, row_y, block_size, block_size, brick_color, block_type='brick'))
+        self.platforms.add(Platform(row_x + block_size, row_y, block_size, block_size, question_color, block_type='question'))
+        self.platforms.add(Platform(row_x + block_size*2, row_y, block_size, block_size, brick_color, block_type='brick'))
+        self.platforms.add(Platform(row_x + block_size*3, row_y, block_size, block_size, question_color, block_type='question'))
+        self.platforms.add(Platform(row_x + block_size*4, row_y, block_size, block_size, brick_color, block_type='brick'))
+        
+        # Floating question block (higher, requires running jump)
+        self.platforms.add(Platform(500, ground_y - 160, block_size, block_size, question_color, block_type='question'))
+        
+        # === PIPES (varying heights) ===
+        pipe_width = 48
+        
+        # Small pipe
+        self.platforms.add(Platform(720, ground_y - 48, pipe_width, 48, pipe_color))
+        
+        # Medium pipe
+        self.platforms.add(Platform(820, ground_y - 80, pipe_width, 80, pipe_color))
+        
+        # Tall pipe
+        self.platforms.add(Platform(920, ground_y - 112, pipe_width, 112, pipe_color))
+        
+        # === BRICK PLATFORMS (stepping stones after pipes) ===
+        self.platforms.add(Platform(1000, ground_y - 64, block_size*2, block_size, brick_color))
+        self.platforms.add(Platform(1080, ground_y - 96, block_size*2, block_size, brick_color))
+        
+        # === STAIRS TO FINISH (classic 1-1 ending) ===
+        stair_x = 1150
+        for i in range(4):
+            stair_height = (i + 1) * block_size
+            self.platforms.add(Platform(stair_x + i * block_size, ground_y - stair_height, 
+                                        block_size, stair_height, brick_color))
+        
+        # Final ground section
+        self.platforms.add(Platform(1150, ground_y, 150, 60, ground_color))
+        
+        # === FINISH (flagpole area) ===
+        finish = Platform(1250, ground_y - 32, 50, 32, (180, 150, 50), is_finish=True)
         self.platforms.add(finish)
         self.finish_platform = finish
+
     
     def create_two_platform_playground(self):
         """Playground 2: Two platforms with wall jump section"""
@@ -112,55 +173,59 @@ class PlaygroundManager:
         self.finish_platform = finish
 
     def create_smb_level(self, randomize=False):
-        """Playground 3: Super Meat Boy Style (Hazards + Tight Walls)"""
+        """Playground 3: SMB Gymnasium - Tests all abilities"""
         ground_y = SCREEN_HEIGHT - 50
         
-        # Start
-        self.platforms.add(Platform(50, ground_y, 150, 50, (100, 50, 50)))
+        # Colors (meat/industrial theme)
+        wall_color = (80, 50, 50)      # Dark meat walls
+        platform_color = (100, 60, 60)  # Lighter platforms
+        ceiling_color = (90, 55, 55)    # Ceiling color
+        
+        # === GROUND FLOOR ===
+        # Start platform (longer for running practice)
+        self.platforms.add(Platform(30, ground_y, 300, 50, platform_color))
         self.start_pos = (80, ground_y - 10)
         
-        # Hazard Pit
-        self.platforms.add(Platform(200, ground_y + 20, 800, 30, (200, 0, 0)))
+        # === SECTION 1: Basic platforming ===
+        self.platforms.add(Platform(380, ground_y - 40, 80, 20, platform_color))
+        self.platforms.add(Platform(500, ground_y - 80, 80, 20, platform_color))
         
-        # Vertical Shafts
-        shaft_x = 300
+        # === SECTION 2: Wall jump shaft ===
+        shaft_x = 620
+        shaft_width = 90
+        shaft_height = 200
+        # Left wall
+        self.platforms.add(Platform(shaft_x, ground_y - shaft_height, 20, shaft_height, wall_color))
+        # Right wall
+        self.platforms.add(Platform(shaft_x + shaft_width, ground_y - shaft_height, 20, shaft_height, wall_color))
+        # Exit platform at top
+        self.platforms.add(Platform(shaft_x + 25, ground_y - shaft_height - 15, 60, 15, platform_color))
         
-        # Randomize parameters
-        num_shafts = 3
-        if randomize:
-            num_shafts = random.randint(3, 5)
-            shaft_gap = random.randint(150, 250)
-        else:
-            shaft_gap = 200
-
-        for i in range(num_shafts):
-            height = 150
-            if randomize:
-                height = random.randint(120, 180)
-                y_base = ground_y - (i * random.randint(150, 200)) - 100
-                width_gap = random.randint(90, 140)
-            else:
-                y_base = ground_y - (i * 180) - 100
-                width_gap = 130
-            
-            # Left Wall
-            self.platforms.add(Platform(shaft_x, y_base, 30, height, (80, 50, 50)))
-            # Right Wall
-            self.platforms.add(Platform(shaft_x + width_gap, y_base, 30, height, (80, 50, 50)))
-            
-            # Platform between shafts
-            if i < num_shafts - 1:
-                mid_plat_w = 70
-                mid_plat_x = shaft_x + 30
-                mid_plat_y = y_base - 30
-                self.platforms.add(Platform(mid_plat_x, mid_plat_y, mid_plat_w, 20, (100, 50, 50)))
-                
-            shaft_x += shaft_gap
-            
-        # Finish
-        finish_x = shaft_x
-        finish_y = ground_y - (num_shafts * 150) - 50
-        finish = Platform(finish_x, finish_y, 100, 30, (200, 200, 50), is_finish=True)
+        # === SECTION 3: Ceiling hang area ===
+        ceiling_start_x = 750
+        # Ceiling to hang from (thick platform above)
+        self.platforms.add(Platform(ceiling_start_x, ground_y - 180, 200, 25, ceiling_color))
+        # Small platforms below ceiling for approach
+        self.platforms.add(Platform(ceiling_start_x - 50, ground_y - 120, 60, 15, platform_color))
+        # Platform at end of ceiling section
+        self.platforms.add(Platform(ceiling_start_x + 170, ground_y - 120, 60, 15, platform_color))
+        
+        # === SECTION 4: Combined wall + ceiling section ===
+        combo_x = 1000
+        # Walls
+        self.platforms.add(Platform(combo_x, ground_y - 250, 20, 150, wall_color))
+        self.platforms.add(Platform(combo_x + 100, ground_y - 250, 20, 150, wall_color))
+        # Ceiling connecting walls
+        self.platforms.add(Platform(combo_x, ground_y - 270, 120, 20, ceiling_color))
+        # Exit platform
+        self.platforms.add(Platform(combo_x + 30, ground_y - 290, 60, 15, platform_color))
+        
+        # === SECTION 5: Final run to finish ===
+        self.platforms.add(Platform(1160, ground_y - 250, 80, 15, platform_color))
+        self.platforms.add(Platform(1280, ground_y - 200, 80, 15, platform_color))
+        
+        # === FINISH ===
+        finish = Platform(1400, ground_y - 220, 80, 30, (200, 200, 50), is_finish=True)
         self.platforms.add(finish)
         self.finish_platform = finish
 
@@ -342,6 +407,8 @@ class PlaygroundManager:
     
     
     def draw(self, surface):
-        self.platforms.draw(surface)
+        # Draw platforms individually to support high contrast outlines
+        for platform in self.platforms:
+            platform.draw(surface)
         self.hazards.draw(surface)
         self.keys.draw(surface)

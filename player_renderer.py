@@ -7,6 +7,46 @@ import pygame
 import math
 
 
+def add_character_outline(surface):
+    """Add a thick outline around non-transparent pixels for High Contrast mode.
+    Uses fast blit-based approach. Settings come from accessibility.py constants."""
+    from accessibility import get_character_outline_settings
+    
+    settings = get_character_outline_settings()
+    if not settings['enabled']:
+        return surface
+    
+    thickness = settings['thickness']
+    outline_color = settings['color']
+    use_diamond = settings['diamond']
+    
+    width, height = surface.get_size()
+    result = pygame.Surface((width, height), pygame.SRCALPHA)
+    
+    # Create a colored version of the sprite for the outline
+    outline_surf = pygame.Surface((width, height), pygame.SRCALPHA)
+    outline_surf.blit(surface, (0, 0))
+    # Set all non-transparent pixels to outline color
+    outline_surf.fill(outline_color + (255,), special_flags=pygame.BLEND_RGB_MIN)
+    
+    # Draw the outline by blitting offset copies
+    for dx in range(-thickness, thickness + 1):
+        for dy in range(-thickness, thickness + 1):
+            if dx == 0 and dy == 0:
+                continue
+            # Use diamond or square shape based on settings
+            if use_diamond:
+                if abs(dx) + abs(dy) <= thickness + 1:
+                    result.blit(outline_surf, (dx, dy))
+            else:
+                result.blit(outline_surf, (dx, dy))
+    
+    # Draw the original sprite on top
+    result.blit(surface, (0, 0))
+    
+    return result
+
+
 def get_effective_color(profile_color, is_skidding, on_wall, on_ground):
     """Determine the effective color based on player state."""
     if is_skidding:
@@ -64,34 +104,47 @@ def draw_mario(surface, center_x, color, velocity_x, on_ground, anim_offset):
 
 
 def draw_meat_boy(surface, center_x, color, velocity_x, on_ground, anim_offset):
-    """Draw Super Meat Boy character sprite."""
-    # Main meaty body (darker red, cube-like)
-    pygame.draw.rect(surface, color, (center_x - 10, 5, 20, 38))
-    # Lighter meat highlights (giving it texture)
-    pygame.draw.rect(surface, (160, 60, 60), (center_x - 8, 7, 3, 34))
-    pygame.draw.rect(surface, (160, 60, 60), (center_x + 5, 7, 3, 34))
-    # Big white eyes (iconic Meat Boy look)
-    pygame.draw.circle(surface, (255, 255, 255), (center_x - 4, 14), 4)
-    pygame.draw.circle(surface, (255, 255, 255), (center_x + 4, 14), 4)
-    # Black pupils (looking forward)
-    pygame.draw.circle(surface, (0, 0, 0), (center_x - 3, 14), 2)
-    pygame.draw.circle(surface, (0, 0, 0), (center_x + 3, 14), 2)
-    # Determined mouth/grimace
-    pygame.draw.rect(surface, (80, 20, 20), (center_x - 4, 22, 8, 2))
-    # Stubby arms
-    pygame.draw.rect(surface, color, (center_x - 14, 26, 4, 8))
-    pygame.draw.rect(surface, color, (center_x + 10, 26, 4, 8))
+    """Draw Super Meat Boy character sprite - square cube shape."""
+    # Main body - SQUARE cube (iconic Meat Boy shape)
+    # Body is 28x28, feet add 8px more = 36 total height
+    # Surface is 60px tall, so body_y = 60 - 36 - 2 = 22 for proper grounding
+    body_size = 28
+    body_x = center_x - body_size // 2
+    body_y = 22  # Positioned to sit on ground properly
     
-    # Stubby legs with animation
+    # Main meaty body (square)
+    pygame.draw.rect(surface, color, (body_x, body_y, body_size, body_size))
+    
+    # Meat texture highlights
+    pygame.draw.rect(surface, (180, 70, 70), (body_x + 2, body_y + 2, 4, body_size - 4))
+    pygame.draw.rect(surface, (180, 70, 70), (body_x + body_size - 6, body_y + 2, 4, body_size - 4))
+    
+    # Big white eyes (iconic - takes up most of face)
+    eye_y = body_y + 8
+    pygame.draw.ellipse(surface, (255, 255, 255), (center_x - 10, eye_y, 9, 12))
+    pygame.draw.ellipse(surface, (255, 255, 255), (center_x + 1, eye_y, 9, 12))
+    
+    # Black pupils
+    pygame.draw.circle(surface, (0, 0, 0), (center_x - 5, eye_y + 6), 3)
+    pygame.draw.circle(surface, (0, 0, 0), (center_x + 5, eye_y + 6), 3)
+    
+    # Small grimace mouth
+    pygame.draw.rect(surface, (60, 15, 15), (center_x - 5, body_y + 22, 10, 3))
+    
+    # Tiny stubby arms sticking out
+    arm_y = body_y + 14
+    pygame.draw.rect(surface, color, (body_x - 5, arm_y, 5, 6))
+    pygame.draw.rect(surface, color, (body_x + body_size, arm_y, 5, 6))
+    
+    # Tiny stubby feet (no separate legs - just feet peeking out)
+    foot_y = body_y + body_size
     leg_offset = 0
     if abs(velocity_x) > 0.1 and on_ground:
-        anim_offset += abs(velocity_x) * 0.15
-        leg_offset = math.sin(anim_offset) * 5
-    pygame.draw.rect(surface, color, (center_x - 8 + leg_offset, 43, 6, 16))
-    pygame.draw.rect(surface, color, (center_x + 2 - leg_offset, 43, 6, 16))
-    # Feet (slightly darker)
-    pygame.draw.rect(surface, (100, 30, 30), (center_x - 8 + leg_offset, 57, 6, 3))
-    pygame.draw.rect(surface, (100, 30, 30), (center_x + 2 - leg_offset, 57, 6, 3))
+        anim_offset += abs(velocity_x) * 0.2
+        leg_offset = math.sin(anim_offset) * 3
+    
+    pygame.draw.rect(surface, color, (center_x - 8 + leg_offset, foot_y, 7, 8))
+    pygame.draw.rect(surface, color, (center_x + 1 - leg_offset, foot_y, 7, 8))
     
     return anim_offset
 
@@ -282,7 +335,8 @@ def render_character(player):
     Returns:
         Updated anim_offset value
     """
-    player.image.fill((0, 0, 0, 0))
+    # Draw to temp surface first, then apply outline
+    temp_surface = pygame.Surface((player.width, player.height), pygame.SRCALPHA)
     
     # Calculate effective color based on state
     color = get_effective_color(
@@ -292,27 +346,61 @@ def render_character(player):
         player.on_ground
     )
     
+    # Apply colorblind adjustments to character color
+    from accessibility import accessibility
+    color = accessibility.adjust_color(color)
+    
     center_x = player.width // 2
     name = player.profile.name
+    anim_offset = player.anim_offset
     
     # Dispatch to character-specific renderer
     if name == "Mario":
-        return draw_mario(player.image, center_x, color, 
+        anim_offset = draw_mario(temp_surface, center_x, color, 
                          player.velocity.x, player.on_ground, player.anim_offset)
     elif name == "Super Meat Boy":
-        return draw_meat_boy(player.image, center_x, color,
+        # SMB needs rotation - draw to another temp surface then rotate
+        smb_surface = pygame.Surface((player.width, player.height), pygame.SRCALPHA)
+        anim_offset = draw_meat_boy(smb_surface, center_x, color,
                             player.velocity.x, player.on_ground, player.anim_offset)
+        
+        # Determine rotation angle based on surface contact
+        rotation = 0
+        if player.on_ceiling:
+            rotation = 180  # Upside down on ceiling
+        elif player.on_wall:
+            if player.wall_direction == 1:  # Wall on right
+                rotation = -90  # Feet point right
+            else:  # Wall on left
+                rotation = 90  # Feet point left
+        
+        if rotation != 0:
+            rotated = pygame.transform.rotate(smb_surface, rotation)
+            # Center the rotated surface
+            rot_rect = rotated.get_rect(center=(player.width // 2, player.height // 2))
+            temp_surface.blit(rotated, rot_rect)
+        else:
+            temp_surface.blit(smb_surface, (0, 0))
     elif name == "Link":
-        return draw_link(player.image, center_x, color,
+        anim_offset = draw_link(temp_surface, center_x, color,
                         player.velocity.x, player.on_ground, player.anim_offset)
     elif name == "Madeline":
-        return draw_madeline(player.image, center_x, color,
+        anim_offset = draw_madeline(temp_surface, center_x, color,
                             player.velocity.x, player.on_ground, player.facing_right, 
                             player.anim_offset)
     elif name == "Ninja (N++)":
-        return draw_ninja(player.image, center_x, color,
+        anim_offset = draw_ninja(temp_surface, center_x, color,
                          player.velocity.x, player.velocity.y, player.on_ground,
                          player.facing_right, player.anim_offset)
     else:
-        return draw_default_stickman(player.image, center_x, color,
+        anim_offset = draw_default_stickman(temp_surface, center_x, color,
                                      player.velocity.x, player.on_ground, player.anim_offset)
+    
+    # Apply High Contrast outline if enabled (settings from accessibility.py)
+    outlined = add_character_outline(temp_surface)
+    
+    # Copy to player.image
+    player.image.fill((0, 0, 0, 0))
+    player.image.blit(outlined, (0, 0))
+    
+    return anim_offset

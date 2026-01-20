@@ -92,6 +92,36 @@ class ParticleSystem:
 
             particle.spawn(x, y, vx, vy, lifetime, color, size, gravity=0.25)
 
+    def spawn_blood_splatter(self, x, y, direction_x=0, direction_y=0, intensity=1.0):
+        """
+        Spawn blood splatter particles (for Meat Boy).
+        direction_x/y: Direction the blood should spray (-1, 0, or 1)
+        intensity: Multiplier for particle count (0.5-2.0)
+        """
+        particle_count = int(4 * intensity)
+        blood_color = (180, 20, 20)  # Dark red blood
+        
+        for _ in range(particle_count):
+            particle = self._get_next_particle()
+            
+            # Blood sprays in a direction, or splats randomly if no direction
+            if direction_x != 0 or direction_y != 0:
+                vx = direction_x * random.uniform(1, 3) + random.uniform(-1, 1)
+                vy = direction_y * random.uniform(1, 3) + random.uniform(-0.5, 0.5)
+            else:
+                # Random splat
+                vx = random.uniform(-2, 2)
+                vy = random.uniform(-2, 1)
+            
+            # Blood particles are small and fade quickly
+            size = random.randint(2, 4)
+            lifetime = random.randint(20, 40)
+            
+            # Vary the blood color slightly
+            color = self._vary_color(blood_color)
+            
+            particle.spawn(x + random.uniform(-5, 5), y, vx, vy, lifetime, color, size, gravity=0.15)
+
     def spawn_run_particles(self, x, y, velocity_x, character_color):
         """
         Spawn subtle dust particles when running FAST only.
@@ -325,6 +355,19 @@ class ParticleSystem:
             size = 3
             lifetime = 20
             particle.spawn(x, y, vx, vy, lifetime, color, size, gravity=0.3)
+
+    def spawn_brick_break(self, x, y, brick_color):
+        """Brick block breaking into fragments."""
+        particle_count = 8
+        for _ in range(particle_count):
+            particle = self._get_next_particle()
+            # Fragments fly in all directions
+            vx = random.uniform(-4, 4)
+            vy = random.uniform(-6, -1)
+            color = self._vary_color(brick_color)
+            size = random.randint(4, 7)
+            lifetime = 25
+            particle.spawn(x + random.uniform(-10, 10), y, vx, vy, lifetime, color, size, gravity=0.4)
 
     def spawn_shuriken(self, x, y, direction):
         """Ninja's Shuriken (Simulated by particles moving together)"""

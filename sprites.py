@@ -8,12 +8,79 @@ import pygame
 class Platform(pygame.sprite.Sprite):
     """A solid platform that players can stand on."""
     
-    def __init__(self, x, y, width, height, color=(100, 100, 100), is_finish=False):
+    def __init__(self, x, y, width, height, color=(100, 100, 100), is_finish=False, block_type=None):
         super().__init__()
-        self.image = pygame.Surface((width, height))
-        self.image.fill(color)
+        self.base_image = pygame.Surface((width, height))
+        self.base_image.fill(color)
+        self.image = self.base_image.copy()
         self.rect = self.image.get_rect(topleft=(x, y))
         self.is_finish = is_finish
+        self.block_type = block_type  # None, 'question', or 'brick'
+        self.color = color
+        self.width = width
+        self.height = height
+        
+        # Animation state
+        self.base_y = y
+        self.jiggle_timer = 0
+        self.jiggle_offset = 0
+        self.is_hit = False
+        self.is_broken = False
+    
+    def hit_from_below(self):
+        """Called when player headbutts this block from below."""
+        if self.block_type == 'question' and not self.is_hit:
+            self.is_hit = True
+            self.jiggle_timer = 15  # 15 frames of jiggle
+            return 'jiggle'
+        elif self.block_type == 'brick':
+            self.is_broken = True
+            return 'break'
+        return None
+    
+    def update(self):
+        """Update animation state."""
+        if self.jiggle_timer > 0:
+            self.jiggle_timer -= 1
+            # Bounce up then down
+            if self.jiggle_timer > 10:
+                self.jiggle_offset = -6
+            elif self.jiggle_timer > 5:
+                self.jiggle_offset = -3
+            else:
+                self.jiggle_offset = 0
+            self.rect.y = self.base_y + self.jiggle_offset
+            
+            # Dim the question block when hit (used)
+            if self.jiggle_timer == 0 and self.block_type == 'question':
+                self.base_image.fill((100, 80, 40))  # Darker "used" color
+                self.image = self.base_image.copy()
+    
+    def draw(self, surface):
+        """Draw platform with colorblind adjustments and high contrast outlines."""
+        from accessibility import get_platform_outline_settings, accessibility
+        
+        # Apply colorblind color adjustment if any mode is active
+        if accessibility.is_active:
+            adjusted_color = accessibility.adjust_color(self.color)
+            # Create adjusted image
+            adjusted_image = pygame.Surface((self.width, self.height))
+            adjusted_image.fill(adjusted_color)
+            surface.blit(adjusted_image, self.rect)
+        else:
+            # Draw the platform normally
+            surface.blit(self.image, self.rect)
+        
+        # Add outline in High Contrast mode using centralized settings
+        settings = get_platform_outline_settings()
+        if settings['enabled']:
+            # Draw bold outer outline
+            pygame.draw.rect(surface, settings['color'], self.rect, settings['thickness'])
+            # Draw inner highlight line for extra contrast
+            inner_rect = self.rect.inflate(-settings['thickness'] * 2, -settings['thickness'] * 2)
+            if inner_rect.width > 0 and inner_rect.height > 0:
+                pygame.draw.rect(surface, settings['inner_color'], inner_rect, settings['inner_thickness'])
+
 
 
 class Key(pygame.sprite.Sprite):

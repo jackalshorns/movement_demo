@@ -24,11 +24,10 @@ class ControllerInput:
         else:
             print("No controller detected. Using keyboard only.")
     
-    def get_movement_input(self, ignore_dpad=False):
+    def get_movement_input(self):
         """
         Returns (horizontal, jump, run, dash) as booleans/values
         horizontal: -1 (left), 0 (neutral), 1 (right)
-        ignore_dpad: If True, don't read D-pad for movement (for RB physics mode)
         """
         if not self.connected:
             return 0, False, False, False
@@ -46,54 +45,34 @@ class ControllerInput:
         else:
             horizontal = 1 if horizontal > 0 else -1
             
-        # D-Pad Support (Buttons 11-14 or Hat) - ONLY if not ignored
-        if horizontal == 0 and not ignore_dpad:
-            # Method 1: D-pad as buttons (Common on macOS)
-            # Typically: 11=Up, 12=Down, 13=Left, 14=Right (check your logs for exact mapping)
-            # Based on logs: 11, 13, 14 being pressed
-            
+        # D-Pad Support (Buttons 11-14 or Hat)
+        if horizontal == 0:
             # Check button count to avoid errors
             num_buttons = self.joystick.get_numbuttons()
             if num_buttons >= 15:
-                # Mapping might vary, checking expected indices
-                if self.joystick.get_button(13): # Left?
+                if self.joystick.get_button(13):  # Left
                     horizontal = -1
-                elif self.joystick.get_button(14): # Right? 
+                elif self.joystick.get_button(14):  # Right 
                     horizontal = 1
                     
-            # Method 2: D-pad as Hat (if supported)
+            # D-pad as Hat (if supported)
             if horizontal == 0 and self.joystick.get_numhats() > 0:
                 hat = self.joystick.get_hat(0)
-                horizontal = hat[0]  # First element is usually X axis
+                horizontal = hat[0]
         
-        # Try multiple button mappings for different controllers
-        jump = False
-        run = False
-        dash = False
+        # PS5 Controller Mapping:
+        # X=0 (Jump), Square=2 (Run)
+        # All other face buttons (Circle, Triangle) have no function
         
-        # Check all buttons and print when pressed (for debugging)
+        jump = self.joystick.get_button(0)  # X button only
+        run = self.joystick.get_button(2)   # Square button only
+        dash = self.joystick.get_button(2)  # Square also triggers dash (for Link/Madeline)
+        
+        # Debug: Print button presses
         if self.debug_mode:
             for i in range(self.joystick.get_numbuttons()):
                 if self.joystick.get_button(i):
                     print(f"Button {i} pressed")
-        
-        # Common button mappings (try multiple)
-        # PS5: X=0, Circle=1, Square=2, Triangle=3, L1=4, R1=5, L2=6, R2=7
-        # Xbox: A=0, B=1, X=2, Y=3, LB=4, RB=5, LT=6, RT=7
-        
-        # Jump: Try buttons 0, 1, 2 (X, Circle, Square on PS5 / A, B, X on Xbox)
-        # Jump: Try buttons 0, 2 (X, Square on PS5 / A, X on Xbox) - Button 1 is Signature
-        jump = (self.joystick.get_button(0) or 
-                self.joystick.get_button(2))
-        
-        # Run: Try shoulder buttons (4, 5, 6, 7)
-        run = (self.joystick.get_button(4) or 
-               self.joystick.get_button(5) or
-               self.joystick.get_button(6) or 
-               self.joystick.get_button(7))
-        
-        # Dash: Try button 3 (Triangle/Y)
-        dash = self.joystick.get_button(3) if self.joystick.get_numbuttons() > 3 else False
         
         return horizontal, jump, run, dash
     
@@ -163,13 +142,7 @@ class ControllerInput:
 
     
     def get_signature_input(self):
-        """Returns True if Signature button (Circle/B) is pressed"""
-        if not self.connected:
-            return False
-            
-        # PS5: Circle=1, Xbox: B=1
-        if self.joystick.get_numbuttons() > 1:
-            return self.joystick.get_button(1)
+        """Signature button disabled"""
         return False
 
     def get_name(self):

@@ -27,6 +27,7 @@ class Player(pygame.sprite.Sprite):
         self.on_wall = False  # For wall slide/jump
         self.wall_direction = 0  # -1 for left wall, 1 for right wall
         self.wall_stick_timer = 0
+        self.on_ceiling = False  # For ceiling hang (SMB)
         
         # Input State
         self.run_button_held = False
@@ -59,17 +60,17 @@ class Player(pygame.sprite.Sprite):
         except ValueError:
             self.switch_profile(MARIO) # Fallback
 
-    def get_input(self, controller=None, ignore_dpad=False):
+    def get_input(self, controller=None, ignore_all_input=False):
         keys = pygame.key.get_pressed()
         
-        # Get controller input if available
+        # Get controller input if available (skip if ignoring all input)
         controller_horizontal = 0
         controller_jump = False
         controller_run = False
         controller_dash = False
         
-        if controller and controller.connected:
-            controller_horizontal, controller_jump, controller_run, controller_dash = controller.get_movement_input(ignore_dpad=ignore_dpad)
+        if controller and controller.connected and not ignore_all_input:
+            controller_horizontal, controller_jump, controller_run, controller_dash = controller.get_movement_input()
         
         # Dash input (Zelda/Link only) - keyboard OR controller
         if self.profile.has_dash and not self.dash_active:
@@ -216,6 +217,15 @@ class Player(pygame.sprite.Sprite):
         self.jump_button_was_pressed = jump_button_pressed
 
     def apply_gravity(self, controller=None):
+        # Ceiling hang - no gravity while hanging
+        if self.on_ceiling and self.profile.has_ceiling_hang:
+            # Can move horizontally while hanging
+            # Blood trail on ceiling
+            if hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                if abs(self.velocity.x) > 0.5:
+                    self.blood_decals.add_trail(self.rect.centerx, self.rect.top, self.velocity.x)
+            return
+        
         # Wall slide reduces fall speed
         if self.on_wall and self.profile.has_wall_slide and self.velocity.y > 0:
             self.velocity.y = min(self.velocity.y, self.profile.wall_slide_speed)
@@ -225,6 +235,10 @@ class Player(pygame.sprite.Sprite):
                 self.particle_system.spawn_wall_slide_particles(
                     wall_x, self.rect.centery, self.wall_direction, self.profile.color
                 )
+            # Wall slide blood smear for Meat Boy
+            if hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                wall_x = self.rect.left if self.wall_direction == -1 else self.rect.right
+                self.blood_decals.add_trail(wall_x, self.rect.bottom)
             
             # Wall Slide Haptics
             if controller and controller.connected and pygame.time.get_ticks() % 10 == 0:
@@ -271,6 +285,41 @@ class Player(pygame.sprite.Sprite):
         # Reset stick timer if we just touched a wall
         if self.on_wall and not was_on_wall:
             self.wall_stick_timer = self.profile.wall_stick_time
+            # Blood drip for Meat Boy on INITIAL wall contact - goes INTO wall
+            if hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                wall_x = self.rect.left if self.wall_direction == -1 else self.rect.right
+                for _ in range(3):  # A few drips
+                    self.blood_decals.add_wall_drip(wall_x, self.rect.centery, self.wall_direction)
+
+    def check_ceiling_contact(self):
+        """Check if player is touching a ceiling (for ceiling hang - SMB)"""
+        was_on_ceiling = self.on_ceiling
+        self.on_ceiling = False
+        
+        if not self.profile.has_ceiling_hang:
+            return
+        
+        # Only check when not falling too fast
+        if self.velocity.y > 3:
+            return
+        
+        # Check for ceiling contact
+        for sprite in self.level.platforms:
+            # Check if player's head is near the bottom of a platform
+            if (self.rect.top <= sprite.rect.bottom + 5 and
+                self.rect.top >= sprite.rect.bottom - 15 and
+                self.rect.right > sprite.rect.left + 5 and
+                self.rect.left < sprite.rect.right - 5 and
+                self.velocity.y <= 0):  # Moving up or stationary
+                
+                self.on_ceiling = True
+                self.velocity.y = 0
+                self.rect.top = sprite.rect.bottom  # Snap head to ceiling
+                
+                # Blood on first contact
+                if not was_on_ceiling and hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                    self.blood_decals.add_landing_drips(self.rect.centerx, self.rect.top, count=2)
+                break
 
     def check_collisions(self, direction, controller=None):
         if direction == 'horizontal':
@@ -301,6 +350,12 @@ class Player(pygame.sprite.Sprite):
                                 landing_velocity, self.profile.color
                             )
                         
+                        # Blood splatter for Meat Boy on landing
+                        if hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                            self.blood_decals.add_splatter(
+                                self.rect.centerx, self.rect.bottom, count=4
+                            )
+                        
                         # Land Sound & Haptics
                         if landing_velocity > 2: # Ignore tiny bumps
                             if self.sound_manager:
@@ -312,6 +367,24 @@ class Player(pygame.sprite.Sprite):
                     if self.velocity.y < 0:
                         self.rect.top = sprite.rect.bottom
                         self.velocity.y = 0
+                        
+                        # Headbutt detection - check if block has special behavior
+                        if hasattr(sprite, 'hit_from_below'):
+                            result = sprite.hit_from_below()
+                            if result == 'break':
+                                # Break the brick - remove it and spawn particles
+                                if hasattr(self, 'particle_system'):
+                                    self.particle_system.spawn_brick_break(
+                                        sprite.rect.centerx, sprite.rect.centery, 
+                                        sprite.color if hasattr(sprite, 'color') else (180, 100, 60)
+                                    )
+                                if self.sound_manager:
+                                    self.sound_manager.play("break")
+                                sprite.kill()  # Remove from sprite group
+                            elif result == 'jiggle':
+                                # Question block was hit
+                                if self.sound_manager:
+                                    self.sound_manager.play("coin")
 
     def jump(self, controller=None):
         # Wall jump takes priority
@@ -395,6 +468,12 @@ class Player(pygame.sprite.Sprite):
             
             if can_double_jump:
                 self.has_double_jumped = True
+            
+            # Blood decal for Meat Boy on jump
+            if hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                self.blood_decals.add_splatter(
+                    self.rect.centerx, self.rect.bottom, count=3
+                )
 
             # Jump Sound & Haptics
             if self.sound_manager:
@@ -456,11 +535,11 @@ class Player(pygame.sprite.Sprite):
                     self.rect.centerx, self.rect.centery, 1 if self.facing_right else -1
                 )
 
-    def update(self, controller=None, ignore_dpad=False):
-        self.get_input(controller, ignore_dpad=ignore_dpad)
+    def update(self, controller=None, ignore_all_input=False):
+        self.get_input(controller, ignore_all_input=ignore_all_input)
         
-        # Check Signature Input
-        if controller and controller.connected:
+        # Check Signature Input (only when not ignoring input)
+        if controller and controller.connected and not ignore_all_input:
             if controller.get_signature_input():
                 # Debounce: simplistic check, ideally we'd track prev state
                 # But let's assume rapid fire or add a cooldown if needed
@@ -487,6 +566,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.y += self.velocity.y
         self.check_collisions('vertical', controller)
         
+        # Check ceiling contact for ceiling hang (SMB)
+        self.check_ceiling_contact()
+        
         # Coyote Timer
         if not self.on_ground:
             self.air_timer += 1
@@ -511,6 +593,9 @@ class Player(pygame.sprite.Sprite):
                     self.rect.centerx - (self.velocity.x * 2),
                     self.rect.bottom, self.velocity.x, self.profile.color
                 )
+            # Blood trail for Meat Boy when running (velocity affects spacing)
+            if hasattr(self, 'blood_decals') and self.profile.name == "Super Meat Boy":
+                self.blood_decals.add_trail(self.rect.centerx, self.rect.bottom, self.velocity.x)
     
     def reset(self):
         """Reset player to starting position"""

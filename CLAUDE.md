@@ -149,6 +149,73 @@ Call from `player.py` via `self.particle_system.spawn_my_effect(...)`.
 
 ---
 
+## ♿ Accessibility (High Contrast Mode)
+
+> **IMPORTANT**: Accessibility is a core priority for this project. All accessibility settings are centralized in [`accessibility.py`](file:///Users/jackalshorns/Antigravity/movement_demo/accessibility.py) for easy artist tuning.
+
+### Quick Toggle
+
+Hold **L1** → Navigate to **Color Blind** → **Left/Right** to toggle between **Off** and **High Contrast**
+
+### Tunable Constants (for Artists)
+
+All settings are at the **top** of `accessibility.py`:
+
+```python
+# ── CHARACTER OUTLINES ──────────────────────────────────────────────────────
+CHARACTER_OUTLINE_THICKNESS = 3        # Pixels (1-5 recommended)
+CHARACTER_OUTLINE_COLOR = (0, 0, 0)    # RGB color (black)
+CHARACTER_OUTLINE_DIAMOND = True       # Diamond or square shape
+
+# ── PLATFORM OUTLINES ───────────────────────────────────────────────────────
+PLATFORM_OUTLINE_THICKNESS = 4         # Outer outline pixels (2-6 recommended)
+PLATFORM_OUTLINE_COLOR = (0, 0, 0)     # RGB color (black)
+PLATFORM_INNER_LINE_THICKNESS = 2      # Inner highlight pixels
+PLATFORM_INNER_LINE_COLOR = (255, 255, 255)  # RGB color (white)
+
+# ── COLOR ADJUSTMENTS ───────────────────────────────────────────────────────
+HIGH_CONTRAST_DARKEN_AMOUNT = 30       # Darken dark colors (0-100)
+HIGH_CONTRAST_BRIGHTEN_AMOUNT = 30     # Brighten light colors (0-100)
+```
+
+### Where Effects Are Rendered
+
+| Effect | File | Function |
+|--------|------|----------|
+| Character outlines | `player_renderer.py` | `add_character_outline()` |
+| Platform outlines | `sprites.py` | `Platform.draw()` |
+| Color adjustments | `accessibility.py` | `adjust_color()` |
+
+### Helper Functions
+
+```python
+from accessibility import get_character_outline_settings, get_platform_outline_settings
+
+# Get current character outline config
+settings = get_character_outline_settings()
+# Returns: {'enabled': True, 'thickness': 3, 'color': (0,0,0), 'diamond': True}
+
+# Get current platform outline config
+settings = get_platform_outline_settings()
+# Returns: {'enabled': True, 'thickness': 4, 'color': (0,0,0), ...}
+```
+
+### Adding New Colorblind Modes
+
+Uncomment modes in `accessibility.py`:
+
+```python
+MODES = [
+    "Off",
+    "High Contrast",
+    # "Deuteranopia",  # ← Uncomment to enable
+    # "Protanopia",
+    # "Tritanopia",
+]
+```
+
+---
+
 ## Architecture Overview
 
 ```

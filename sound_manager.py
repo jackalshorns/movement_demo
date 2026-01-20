@@ -45,7 +45,7 @@ class SoundManager:
             if os.path.exists(path):
                 try:
                     self.sounds[name] = pygame.mixer.Sound(path)
-                    self.sounds[name].set_volume(0.7)
+                    self.sounds[name].set_volume(0.0)  # Start muted
                 except: pass
                 
         # Load all other generated files dynamically (like jump_Mario.wav)
@@ -55,7 +55,7 @@ class SoundManager:
                 path = os.path.join(sound_dir, filename)
                 try:
                     self.sounds[name] = pygame.mixer.Sound(path)
-                    self.sounds[name].set_volume(0.7)
+                    self.sounds[name].set_volume(0.0)  # Start muted
                 except: pass
     
     def play(self, sound_name):
@@ -68,3 +68,14 @@ class SoundManager:
         if not self.enabled: return
         if sound_name in self.sounds:
             self.sounds[sound_name].stop()
+    
+    def set_volume(self, volume):
+        """Set volume for all sounds (0.0 to 1.0).
+        Uses exponential curve for better quiet range (human hearing is logarithmic).
+        """
+        volume = max(0.0, min(1.0, volume))
+        # Apply exponential curve: volume^3 gives more range in quiet levels
+        # 0.5 linear -> 0.125 actual, 0.1 linear -> 0.001 actual
+        actual_volume = volume ** 3
+        for sound in self.sounds.values():
+            sound.set_volume(actual_volume)

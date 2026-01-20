@@ -69,6 +69,39 @@ python main.py
 5. **N++ Style** - Momentum flow
 6. **Shaft** - Dedicated wall jump practice
 
+## LLM Physics Customization
+
+Describe physics in natural language and let Claude adjust the sliders!
+
+### Setup
+
+1. Get an API key from [Anthropic Console](https://console.anthropic.com/)
+2. Set the environment variable:
+
+   ```bash
+   export ANTHROPIC_API_KEY="your-api-key-here"
+   ```
+
+3. Install the dependency:
+
+   ```bash
+   pip install anthropic
+   ```
+
+### Usage
+
+1. Hold **R1** and D-pad down to select **Customize**
+2. Press **X** to enter text input mode
+3. Type a description (e.g., "floaty moon gravity", "slippery ice")
+4. Press **Enter** to apply, **Escape** to cancel
+
+### Example Prompts
+
+- "floaty moon gravity" → Low gravity, high jumps
+- "slippery ice physics" → Low acceleration
+- "heavy and snappy like Meat Boy" → High gravity, high acceleration
+- "bouncy trampoline jumps" → High jump force
+
 ## For Developers
 
 See [`CLAUDE.md`](CLAUDE.md) for:
