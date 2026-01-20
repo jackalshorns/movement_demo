@@ -25,10 +25,17 @@ def _init_anthropic():
         import anthropic
         _anthropic = anthropic
         
+        # Load .env file if it exists
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except ImportError:
+            pass  # dotenv not required if env var already set
+        
         # Get API key from environment
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
-            print("[LLM] Warning: No ANTHROPIC_API_KEY found in environment")
+            print("[LLM] Warning: No ANTHROPIC_API_KEY found in environment or .env file")
             return False
         
         _client = anthropic.Anthropic(api_key=api_key)
